@@ -56,6 +56,8 @@ Set up the monorepo, shared TypeScript tooling, local infrastructure bootstrap, 
 - [ ] Add local infra definitions for `ChromaDB`
 - [ ] Add startup scripts for local development
 - [ ] Add environment variable templates
+- [ ] Add provider configuration variables for `AI_PROVIDER`, `AI_MODEL`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `OPENAI_BASE_URL`
+- [ ] Document where `.env` files should live for platform services and agent workers
 - [ ] Verify infrastructure can be started locally
 
 ### T-005 Runtime State and Git Ignore

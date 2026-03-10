@@ -14,7 +14,7 @@ A strong local-first implementation is:
 
 - `Temporal` for durable orchestration, retries, state, and visibility
 - `LangGraph` or a thin custom runner for controlled agent execution
-- Local model support through an OpenAI-compatible endpoint or equivalent model clients
+- Local model support through `OpenAI`, `Anthropic`, an OpenAI-compatible endpoint, or equivalent model clients
 
 ## Target Architecture
 
@@ -34,6 +34,14 @@ Core services:
 - Queue and events: let `Temporal` cover most of this; avoid adding Kafka early
 - Web UI: `Next.js` app for story intake, approvals, run status, logs, and artifacts
 - Observability: `Temporal UI` + structured logs + traces
+
+Provider configuration should be environment-driven and shared across the platform services and agent workers, for example:
+
+- `AI_PROVIDER`
+- `AI_MODEL`
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `OPENAI_BASE_URL` for local or OpenAI-compatible endpoints
 
 ### 2. Delivery Intelligence Layer
 
@@ -577,6 +585,7 @@ For the stated stack, this is a strong fit:
 - Source control: Git
 - Testing: `Playwright` + existing lint, typecheck, and unit frameworks
 - Model access: local model endpoint or OpenAI-compatible provider abstraction
+- Provider configuration: environment variables loaded by `platform-api`, `workflow-worker`, and agent workers
 
 Do not start with:
 

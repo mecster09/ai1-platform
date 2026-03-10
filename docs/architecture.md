@@ -60,8 +60,16 @@ The system is intentionally conservative in its dependency footprint.
 - `ChromaDB`: local vector similarity search on contextual artifacts
 - `Git`: version control and diff generation
 - `Docker`: isolated workspace execution for tool commands
-- Model endpoint: local model server or OpenAI-compatible API
+- Model endpoint: `OpenAI`, `Anthropic`, local model server, or OpenAI-compatible API
 - Existing project toolchain: `npm`, lint, typecheck, unit test, `Playwright`
+
+Provider credentials and model selection should be supplied through environment configuration shared by the platform services and agent workers. Recommended variables include:
+
+- `AI_PROVIDER`
+- `AI_MODEL`
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `OPENAI_BASE_URL`
 
 ### High-Level Context Diagram
 
@@ -117,6 +125,8 @@ The platform layer owns all long-lived operational concerns:
 - Logs, traces, and execution metadata
 
 This layer must be stable, deterministic, and mostly agent-agnostic.
+
+It should also centralize provider configuration loading so model credentials and model-selection settings do not have to be hard-coded inside individual workers.
 
 #### Platform Web
 

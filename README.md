@@ -25,6 +25,12 @@ The intended local-first stack is:
 - filesystem-based artifact storage
 - `Next.js` for the platform UI
 
+The agent runtime should support provider-backed LLM access, including:
+
+- `OpenAI`
+- `Anthropic`
+- local or OpenAI-compatible endpoints
+
 The operating model is workflow-and-contract based rather than free-form agent chat:
 
 1. A story is submitted.
@@ -42,5 +48,26 @@ The current built-in delivery-agent set is:
 - `test-automation`
 
 The platform is intended to support `frontend` only, `backend` only, `test-automation` only, any pair of those agents, or all three, with future agent types added through the same registry model.
+
+## LLM Configuration
+
+Provider and model configuration should be supplied through environment variables loaded by the platform services and agent workers.
+
+Recommended configuration shape:
+
+- `AI_PROVIDER` with values such as `openai`, `anthropic`, or `openai-compatible`
+- `AI_MODEL` for the default model name used by the agent runtime
+- `OPENAI_API_KEY` when `AI_PROVIDER=openai`
+- `ANTHROPIC_API_KEY` when `AI_PROVIDER=anthropic`
+- `OPENAI_BASE_URL` when using a local or OpenAI-compatible endpoint
+
+Recommended setup flow:
+
+1. Copy the environment template created by the foundation tasks into a local `.env` file.
+2. Add the API key for the selected provider.
+3. Set `AI_PROVIDER` and `AI_MODEL`.
+4. Start `platform-api`, `workflow-worker`, and the agent workers so they all receive the same provider configuration.
+
+The intent is that provider choice and model selection are configuration, not code changes.
 
 Detailed planning and architecture documents live in [docs/plan.md](/c:/Code/AI1-Platform/docs/plan.md) and [docs/architecture.md](/c:/Code/AI1-Platform/docs/architecture.md).
