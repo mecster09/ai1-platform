@@ -1,0 +1,540 @@
+{
+  "contractVersion": "1.1.0",
+  "service": "platform-api",
+  "description": "Baseline API contract for the AI1 Platform command and query boundary.",
+  "protocol": "http-json",
+  "storageArchitecture": {
+    "relationalStore": "SQLite",
+    "vectorStore": "ChromaDB",
+    "artifactStore": "filesystem"
+  },
+  "principles": [
+    "The platform API is the only public application boundary.",
+    "All workflows are started through typed commands.",
+    "Internal agent and workflow coordination is artifact-driven and not exposed directly to the UI.",
+    "All write operations are auditable and return stable identifiers."
+  ],
+  "resources": {
+    "stories": {
+      "create": {
+        "method": "POST",
+        "path": "/stories",
+        "requestBodySchema": {
+          "type": "object",
+          "required": [
+            "title",
+            "type",
+            "narrative",
+            "acceptanceCriteria",
+            "priority"
+          ],
+          "properties": {
+            "title": { "type": "string", "minLength": 1 },
+            "type": { "type": "string", "enum": ["user-story", "technical-story"] },
+            "narrative": { "type": "string", "minLength": 1 },
+            "priority": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+            "constraints": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "affectedModules": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "designReferences": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "type"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "type": { "type": "string", "enum": ["file", "url", "note"] },
+                  "value": { "type": "string" }
+                }
+              }
+            },
+            "acceptanceCriteria": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "given", "when", "then"],
+                "properties": {
+                  "id": { "type": "string" },
+                  "given": { "type": "string" },
+                  "when": { "type": "string" },
+                  "then": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "required": ["storyId", "status", "createdAt"],
+          "properties": {
+            "storyId": { "type": "string" },
+            "status": { "type": "string", "enum": ["draft", "submitted"] },
+            "createdAt": { "type": "string", "format": "date-time" }
+          }
+        }
+      },
+      "get": {
+        "method": "GET",
+        "path": "/stories/{storyId}",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/Story"
+        }
+      },
+      "list": {
+        "method": "GET",
+        "path": "/stories",
+        "queryParams": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "submitted",
+              "decomposed",
+              "architecture-pending-approval",
+              "in-delivery",
+              "validating",
+              "in-review",
+              "blocked",
+              "completed",
+              "rejected"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/schemas/StorySummary" }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "upload": {
+        "method": "POST",
+        "path": "/stories/{storyId}/artifacts",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "required": ["artifactType", "name"],
+          "properties": {
+            "artifactType": {
+              "type": "string",
+              "enum": ["design-reference", "supporting-doc", "attachment", "evidence"]
+            },
+            "name": { "type": "string" },
+            "contentType": { "type": "string" },
+            "source": { "type": "string" }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/ArtifactReference"
+        }
+      }
+    },
+    "workflows": {
+      "decomposeStory": {
+        "method": "POST",
+        "path": "/stories/{storyId}/decompose",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "properties": {
+            "forceRestart": { "type": "boolean" }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/WorkflowStartResponse"
+        }
+      },
+      "createArchitecture": {
+        "method": "POST",
+        "path": "/stories/{storyId}/architecture",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "properties": {
+            "decompositionRunId": { "type": "string" }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/WorkflowStartResponse"
+        }
+      },
+      "startDelivery": {
+        "method": "POST",
+        "path": "/stories/{storyId}/delivery",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "properties": {
+            "architectureRunId": { "type": "string" },
+            "agentSelection": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["frontend", "backend", "test-automation"]
+              }
+            }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/WorkflowStartResponse"
+        }
+      },
+      "validateDelivery": {
+        "method": "POST",
+        "path": "/stories/{storyId}/validate",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "properties": {
+            "runIds": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/WorkflowStartResponse"
+        }
+      }
+    },
+    "runs": {
+      "get": {
+        "method": "GET",
+        "path": "/runs/{runId}",
+        "pathParams": {
+          "runId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/AgentRunResult"
+        }
+      },
+      "listByStory": {
+        "method": "GET",
+        "path": "/stories/{storyId}/runs",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/schemas/RunSummary" }
+            }
+          }
+        }
+      },
+      "getLogs": {
+        "method": "GET",
+        "path": "/runs/{runId}/logs",
+        "pathParams": {
+          "runId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "timestamp": { "type": "string", "format": "date-time" },
+                  "level": { "type": "string" },
+                  "message": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "getDiff": {
+        "method": "GET",
+        "path": "/runs/{runId}/diff",
+        "pathParams": {
+          "runId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "properties": {
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": { "type": "string" },
+                  "changeType": {
+                    "type": "string",
+                    "enum": ["added", "modified", "deleted", "renamed"]
+                  },
+                  "patchPath": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "reviews": {
+      "approve": {
+        "method": "POST",
+        "path": "/reviews/{reviewId}/approve",
+        "pathParams": {
+          "reviewId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "required": ["decisionMaker"],
+          "properties": {
+            "decisionMaker": { "type": "string" },
+            "comment": { "type": "string" }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/ReviewDecision"
+        }
+      },
+      "requestRevision": {
+        "method": "POST",
+        "path": "/reviews/{reviewId}/request-revision",
+        "pathParams": {
+          "reviewId": { "type": "string" }
+        },
+        "requestBodySchema": {
+          "type": "object",
+          "required": ["decisionMaker", "reasons"],
+          "properties": {
+            "decisionMaker": { "type": "string" },
+            "reasons": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/ReviewDecision"
+        }
+      }
+    },
+    "traceability": {
+      "getMatrix": {
+        "method": "GET",
+        "path": "/stories/{storyId}/traceability",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "properties": {
+            "storyId": { "type": "string" },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "acceptanceCriterionId": { "type": "string" },
+                  "taskId": { "type": "string" },
+                  "runId": { "type": "string" },
+                  "artifactId": { "type": "string" },
+                  "evidencePath": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "Story": {
+      "type": "object",
+      "required": ["storyId", "title", "type", "status", "acceptanceCriteria"],
+      "properties": {
+        "storyId": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "submitted",
+            "decomposed",
+            "architecture-pending-approval",
+            "in-delivery",
+            "validating",
+            "in-review",
+            "blocked",
+            "completed",
+            "rejected"
+          ]
+        },
+        "priority": { "type": "string" },
+        "narrative": { "type": "string" },
+        "constraints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "acceptanceCriteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "given": { "type": "string" },
+              "when": { "type": "string" },
+              "then": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "StorySummary": {
+      "type": "object",
+      "properties": {
+        "storyId": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ArtifactReference": {
+      "type": "object",
+      "properties": {
+        "artifactId": { "type": "string" },
+        "artifactType": { "type": "string" },
+        "path": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "WorkflowStartResponse": {
+      "type": "object",
+      "properties": {
+        "workflowId": { "type": "string" },
+        "runId": { "type": "string" },
+        "status": { "type": "string", "enum": ["started", "already-running"] }
+      }
+    },
+    "RunSummary": {
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "workflowId": { "type": "string" },
+        "agentType": { "type": "string" },
+        "status": { "type": "string" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AgentRunResult": {
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string" },
+        "storyId": { "type": "string" },
+        "agentType": { "type": "string" },
+        "status": {
+          "type": "string",
+          "enum": ["queued", "running", "blocked", "failed", "completed", "needs-review"]
+        },
+        "summary": { "type": "string" },
+        "assumptions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "blockers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/schemas/ArtifactReference" }
+        },
+        "changedFiles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "ReviewDecision": {
+      "type": "object",
+      "properties": {
+        "reviewId": { "type": "string" },
+        "reviewStage": {
+          "type": "string",
+          "enum": ["clarification", "architecture", "delivery", "final-review"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["approved", "revision-requested", "rejected"]
+        },
+        "decisionMaker": { "type": "string" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "internalContracts": {
+    "AgentWorkItem": {
+      "requiredFields": [
+        "runId",
+        "storyId",
+        "agentType",
+        "taskIds",
+        "allowedTools",
+        "inputArtifacts",
+        "contextScope",
+        "outputSchemaVersion",
+        "policyConstraints"
+      ]
+    },
+    "ValidationRequest": {
+      "requiredFields": [
+        "storyId",
+        "runIds",
+        "workspaceRefs",
+        "checks"
+      ]
+    },
+    "ReviewSignal": {
+      "requiredFields": [
+        "reviewId",
+        "storyId",
+        "decision",
+        "decisionMaker"
+      ]
+    }
+  }
+}

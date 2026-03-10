@@ -1,0 +1,303 @@
+{
+  "modelVersion": "1.1.0",
+  "description": "Canonical data model for the AI1 Platform aligned to the local-first architecture.",
+  "storageArchitecture": {
+    "relationalStore": "SQLite",
+    "vectorStore": "ChromaDB",
+    "artifactStore": "filesystem"
+  },
+  "entities": {
+    "Product": {
+      "primaryKey": "productId",
+      "fields": {
+        "productId": "string",
+        "name": "string",
+        "description": "string",
+        "status": "string",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "Epic": {
+      "primaryKey": "epicId",
+      "fields": {
+        "epicId": "string",
+        "productId": "string",
+        "title": "string",
+        "description": "string",
+        "status": "string",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "Story": {
+      "primaryKey": "storyId",
+      "fields": {
+        "storyId": "string",
+        "epicId": "string|null",
+        "title": "string",
+        "type": "user-story|technical-story",
+        "narrative": "string",
+        "priority": "low|medium|high|critical",
+        "status": "draft|submitted|decomposed|architecture-pending-approval|in-delivery|validating|in-review|blocked|completed|rejected",
+        "constraints": "string[]",
+        "affectedModules": "string[]",
+        "createdBy": "string",
+        "createdAt": "datetime",
+        "updatedAt": "datetime",
+        "currentWorkflowId": "string|null"
+      }
+    },
+    "AcceptanceCriterion": {
+      "primaryKey": "acceptanceCriterionId",
+      "fields": {
+        "acceptanceCriterionId": "string",
+        "storyId": "string",
+        "sequence": "number",
+        "given": "string",
+        "when": "string",
+        "then": "string",
+        "status": "draft|covered|validated|blocked",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "Task": {
+      "primaryKey": "taskId",
+      "fields": {
+        "taskId": "string",
+        "storyId": "string",
+        "agentType": "tasks|architect|frontend|backend|test-automation",
+        "title": "string",
+        "description": "string",
+        "status": "proposed|approved|in-progress|blocked|completed|rejected",
+        "definitionOfDone": "string[]",
+        "predictedImpactedFiles": "string[]",
+        "riskFlags": "string[]",
+        "ambiguityFlags": "string[]",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "TaskDependency": {
+      "primaryKey": "taskDependencyId",
+      "fields": {
+        "taskDependencyId": "string",
+        "taskId": "string",
+        "dependsOnTaskId": "string",
+        "dependencyType": "hard|soft",
+        "createdAt": "datetime"
+      }
+    },
+    "ArchitectureBlueprint": {
+      "primaryKey": "blueprintId",
+      "fields": {
+        "blueprintId": "string",
+        "storyId": "string",
+        "sourceRunId": "string",
+        "version": "number",
+        "status": "draft|pending-approval|approved|superseded|rejected",
+        "summary": "string",
+        "componentBoundaries": "json",
+        "dataFlows": "json",
+        "securityNotes": "string[]",
+        "performanceNotes": "string[]",
+        "implementationSequence": "string[]",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "ApiContract": {
+      "primaryKey": "apiContractId",
+      "fields": {
+        "apiContractId": "string",
+        "storyId": "string",
+        "blueprintId": "string",
+        "version": "string",
+        "format": "openapi|json-schema|typescript-interface|custom-json",
+        "status": "draft|approved|superseded",
+        "contractBody": "json",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "DataModelChange": {
+      "primaryKey": "dataModelChangeId",
+      "fields": {
+        "dataModelChangeId": "string",
+        "storyId": "string",
+        "blueprintId": "string",
+        "changeType": "create|alter|drop|rename",
+        "targetEntity": "string",
+        "approvalRequired": "boolean",
+        "status": "proposed|approved|implemented|rejected",
+        "changeBody": "json",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "AgentRun": {
+      "primaryKey": "runId",
+      "fields": {
+        "runId": "string",
+        "workflowId": "string",
+        "storyId": "string",
+        "agentType": "tasks|architect|frontend|backend|test-automation|validation",
+        "status": "queued|running|blocked|failed|completed|needs-review",
+        "workspaceRef": "string|null",
+        "branchName": "string|null",
+        "startedAt": "datetime|null",
+        "completedAt": "datetime|null",
+        "retryCount": "number",
+        "createdAt": "datetime"
+      }
+    },
+    "AgentRunResult": {
+      "primaryKey": "runResultId",
+      "fields": {
+        "runResultId": "string",
+        "runId": "string",
+        "summary": "string",
+        "assumptions": "string[]",
+        "blockers": "string[]",
+        "changedFiles": "string[]",
+        "confidence": "number",
+        "reviewNotes": "string[]",
+        "createdAt": "datetime"
+      }
+    },
+    "Artifact": {
+      "primaryKey": "artifactId",
+      "fields": {
+        "artifactId": "string",
+        "storyId": "string",
+        "runId": "string|null",
+        "taskId": "string|null",
+        "artifactType": "architecture-doc|api-contract|data-model|sequence-flow|impact-analysis|patch|test-report|validation-log|evidence|attachment",
+        "format": "md|json|patch|txt|html|png|zip",
+        "path": "string",
+        "schemaVersion": "string|null",
+        "integrityHash": "string|null",
+        "createdAt": "datetime"
+      }
+    },
+    "TestScenario": {
+      "primaryKey": "testScenarioId",
+      "fields": {
+        "testScenarioId": "string",
+        "storyId": "string",
+        "acceptanceCriterionId": "string",
+        "runId": "string|null",
+        "automationStatus": "planned|generated|passing|failing|blocked",
+        "framework": "playwright",
+        "specPath": "string|null",
+        "evidencePath": "string|null",
+        "environmentAssumptions": "string[]",
+        "blockers": "string[]",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "ValidationReport": {
+      "primaryKey": "validationReportId",
+      "fields": {
+        "validationReportId": "string",
+        "storyId": "string",
+        "runId": "string",
+        "overallStatus": "passed|failed|partial",
+        "checks": "json",
+        "evidenceArtifacts": "string[]",
+        "createdAt": "datetime"
+      }
+    },
+    "ReviewDecision": {
+      "primaryKey": "reviewId",
+      "fields": {
+        "reviewId": "string",
+        "storyId": "string",
+        "runId": "string|null",
+        "reviewStage": "clarification|architecture|delivery|final-review",
+        "status": "pending|approved|revision-requested|rejected",
+        "decisionMaker": "string|null",
+        "comments": "string[]",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "TraceLink": {
+      "primaryKey": "traceLinkId",
+      "fields": {
+        "traceLinkId": "string",
+        "storyId": "string",
+        "acceptanceCriterionId": "string|null",
+        "taskId": "string|null",
+        "runId": "string|null",
+        "artifactId": "string|null",
+        "linkType": "covers|implements|validates|produced-by|depends-on",
+        "createdAt": "datetime"
+      }
+    },
+    "ContextDocument": {
+      "primaryKey": "contextDocumentId",
+      "fields": {
+        "contextDocumentId": "string",
+        "documentType": "repo-doc|architecture|coding-standard|prior-story|api-contract|design-system",
+        "sourcePath": "string",
+        "scope": "global|product|repo|module|story",
+        "embeddingRef": "string|null",
+        "vectorCollection": "string|null",
+        "checksum": "string",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
+    "WorkspaceRun": {
+      "primaryKey": "workspaceRunId",
+      "fields": {
+        "workspaceRunId": "string",
+        "runId": "string",
+        "storyId": "string",
+        "agentType": "tasks|architect|frontend|backend|test-automation|validation",
+        "workspacePath": "string",
+        "repositoryPath": "string",
+        "branchName": "string",
+        "status": "provisioned|running|completed|failed|cleaned-up",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    }
+  },
+  "relationships": [
+    { "from": "Product", "to": "Epic", "type": "one-to-many", "via": "productId" },
+    { "from": "Epic", "to": "Story", "type": "one-to-many", "via": "epicId" },
+    { "from": "Story", "to": "AcceptanceCriterion", "type": "one-to-many", "via": "storyId" },
+    { "from": "Story", "to": "Task", "type": "one-to-many", "via": "storyId" },
+    { "from": "Task", "to": "TaskDependency", "type": "one-to-many", "via": "taskId" },
+    { "from": "Story", "to": "ArchitectureBlueprint", "type": "one-to-many", "via": "storyId" },
+    { "from": "ArchitectureBlueprint", "to": "ApiContract", "type": "one-to-many", "via": "blueprintId" },
+    { "from": "ArchitectureBlueprint", "to": "DataModelChange", "type": "one-to-many", "via": "blueprintId" },
+    { "from": "Story", "to": "AgentRun", "type": "one-to-many", "via": "storyId" },
+    { "from": "AgentRun", "to": "AgentRunResult", "type": "one-to-one", "via": "runId" },
+    { "from": "AgentRun", "to": "Artifact", "type": "one-to-many", "via": "runId" },
+    { "from": "Story", "to": "TestScenario", "type": "one-to-many", "via": "storyId" },
+    { "from": "AcceptanceCriterion", "to": "TestScenario", "type": "one-to-many", "via": "acceptanceCriterionId" },
+    { "from": "AgentRun", "to": "ValidationReport", "type": "one-to-many", "via": "runId" },
+    { "from": "Story", "to": "ReviewDecision", "type": "one-to-many", "via": "storyId" },
+    { "from": "Story", "to": "TraceLink", "type": "one-to-many", "via": "storyId" },
+    { "from": "AgentRun", "to": "WorkspaceRun", "type": "one-to-one", "via": "runId" }
+  ],
+  "readModels": {
+    "StoryDashboardView": {
+      "description": "Aggregated story summary for the UI.",
+      "sourceEntities": ["Story", "Task", "AgentRun", "ReviewDecision", "ValidationReport"]
+    },
+    "TraceabilityMatrixView": {
+      "description": "Maps acceptance criteria to tasks, runs, artifacts, and evidence.",
+      "sourceEntities": ["Story", "AcceptanceCriterion", "Task", "TraceLink", "Artifact", "TestScenario"]
+    },
+    "RunTimelineView": {
+      "description": "Chronological run and approval timeline per story.",
+      "sourceEntities": ["AgentRun", "AgentRunResult", "ReviewDecision", "ValidationReport"]
+    }
+  }
+}
