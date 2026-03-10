@@ -34,6 +34,9 @@ Set up the monorepo, shared TypeScript tooling, local infrastructure bootstrap, 
 - [ ] Create `apps/`, `agents/`, `packages/`, `infra/`, `scripts/`, and `docs/`
 - [ ] Create initial app folders for `platform-web`, `platform-api`, `workflow-worker`, `tasks-agent-worker`, and `architect-agent-worker`
 - [ ] Create initial shared package folders
+- [ ] Create `platform-web` support folders for `api-client`, `actions`, and `telemetry`
+- [ ] Create `platform-api` support folders for `commands`, `queries`, `streaming`, and `artifacts`
+- [ ] Create initial `platform-api-client` shared package folder
 - [ ] Confirm the structure matches [repo-structure.md](c:/Code/AI1-Platform/docs/repo-structure.md)
 
 ### T-003 Shared TypeScript and Tooling
@@ -45,6 +48,7 @@ Set up the monorepo, shared TypeScript tooling, local infrastructure bootstrap, 
 - [ ] Add ESLint configuration for Node.js and Next.js packages
 - [ ] Add Prettier configuration
 - [ ] Add path alias conventions for shared packages
+- [ ] Ensure tooling supports Next.js App Router conventions and `instrumentation.ts`
 - [ ] Verify lint and typecheck run from the root
 
 ### T-004 Local Infrastructure Bootstrap

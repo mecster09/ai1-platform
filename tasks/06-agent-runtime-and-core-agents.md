@@ -26,6 +26,8 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Enforce agent-type checks against configured registry data
 - [ ] Validate agent outputs against schemas
 - [ ] Standardize blocked and failed responses
+- [ ] Validate `apiBoundaryVersion` and `emittedEvents`
+- [ ] Enforce `mustUseApprovedApiBoundary`, `requiresIdempotentMutations`, and `requiresReviewVersionCheck`
 
 ### T-039 Shared Tool Adapters
 
@@ -64,6 +66,7 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Generate `DataModelChange[]`
 - [ ] Generate sequence flow and impact analysis artifacts
 - [ ] Flag approval-required changes
+- [ ] Classify API changes as command, query, streaming, or artifact boundary changes where applicable
 - [ ] Add worker-level tests
 
 ### T-042 Approval Integration
@@ -77,3 +80,4 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Support clarification reviews
 - [ ] Support architecture approvals
 - [ ] Support final review decisions
+- [ ] Validate idempotency keys and review version checks for approval and revision flows

@@ -141,7 +141,17 @@ It should also centralize provider configuration loading so model credentials an
 - Traceability matrix views
 - Error and blocker reporting
 
-The UI should remain thin. It does not orchestrate work directly; it sends commands to the platform API and subscribes to read models for status updates.
+The UI should remain thin. It does not orchestrate work directly; it submits commands to the platform API and renders read models and event streams exposed by the platform boundary.
+
+Implementation rules for `Next.js`:
+
+- Use the App Router with Server Components by default for story, run, review, and traceability pages.
+- Use Client Components only for interactive controls such as approval actions, live log viewers, diff interactions, and upload widgets.
+- Use Server Actions for same-origin UI mutations when the action is initiated from `platform-web` forms or buttons and does not need to be exposed as a general-purpose HTTP contract.
+- Use Route Handlers only for explicit HTTP boundaries such as streaming events, artifact download or upload, webhook-style callbacks, or external tool access.
+- Treat run status, logs, approvals, artifacts, and traceability screens as dynamic operational views; they must not rely on static generation.
+- Keep browser code away from direct database and workflow clients. Browser-initiated calls go through the typed platform API surface or typed Server Actions backed by that surface.
+- Register framework-level telemetry through `instrumentation.ts` so request tracing and correlation IDs are captured consistently.
 
 #### Platform API
 
@@ -159,6 +169,19 @@ Responsibilities:
 - Normalize user input into typed objects
 
 This service should be the only public application boundary. Internal workers should not be directly exposed to the UI.
+
+The platform API must separate four public concerns:
+
+- Command endpoints for mutations such as story creation, workflow start, approval, retry, cancellation, and revision requests
+- Query endpoints for read models such as story dashboards, run summaries, review queues, and traceability
+- Streaming endpoints for live workflow status, run events, and log tails
+- Artifact endpoints for upload, download, diff retrieval, and evidence access
+
+Boundary rules:
+
+- `platform-web` may consume this boundary through HTTP or a shared typed application client, but it must not bypass validation, authorization, or audit behavior.
+- Internal workers and services communicate through typed internal contracts, not the public HTTP surface.
+- The public API is stable and versioned independently from internal workflow and agent contracts.
 
 #### Workflow Engine
 
@@ -305,7 +328,7 @@ Expected artifact classes:
 - `api-contract.json`
 - `data-model.json`
 - `impact-analysis.json`
-- `sequence-flow.json`
+- `sequence-flow.md`
 - Patch files
 - Test reports
 - Validation logs
@@ -349,12 +372,14 @@ Primary responsibilities:
 Reads:
 
 - Platform API query endpoints
+- Platform API streaming endpoints for live run state and logs
 
 Writes:
 
 - Story submissions
 - Approval decisions
 - Retry and cancellation commands
+- Artifact uploads through approved upload flows
 
 #### `platform-api`
 
@@ -919,17 +944,102 @@ The platform API should expose resource-oriented endpoints or equivalent RPC han
 - Run details and logs
 - Approval actions
 - Diff and traceability views
+- Live run events and log streams
+- Review queue and review detail reads
+- Artifact download and evidence retrieval
+
+The public API should be organized into explicit categories:
+
+- Command API
+- Query API
+- Streaming API
+- Artifact API
+
+#### Boundary Between `platform-web` and `platform-api`
+
+The separation between web and API must be implementation-specific rather than conceptual only.
+
+- Browser-originated interactions use the public platform API boundary.
+- `Next.js` Server Components and Server Actions may call a typed platform client backed by that same boundary.
+- If `platform-web` and `platform-api` are colocated in the same deployment, shared server-side libraries may be used to avoid redundant loopback HTTP, but they must preserve the same validation, authorization, audit logging, and idempotency semantics as the public API.
+- Route Handlers are not the default data-access layer for server-rendered pages; they exist to expose an HTTP surface where one is actually required.
+
+#### Command API Requirements
+
+Write endpoints must support:
+
+- Idempotency keys for create, start, retry, cancel, approve, and revision-request operations
+- Optimistic concurrency or version checks for approval and review decisions
+- Audit fields for actor, timestamp, and decision rationale
+- Explicit error codes for policy violations, invalid state transitions, duplicate requests, and approval-gate failures
+
+#### Query API Requirements
+
+Read endpoints must provide:
+
+- Story dashboard summaries
+- Review queue summaries
+- Run timelines
+- Validation summaries
+- Traceability projections
+- Artifact metadata without requiring full artifact download
+
+#### Streaming API Requirements
+
+Operational views need a live transport for:
+
+- Run lifecycle events
+- Workflow status changes
+- Log tailing
+- Approval state changes
+- Validation progress
+
+Server-Sent Events is the preferred MVP transport for local-first deployments. Polling may remain available as a fallback, but the architecture should treat streaming as the primary experience for live run views.
+
+#### Artifact API Requirements
+
+Artifact endpoints must support:
+
+- Upload initiation and completion
+- Metadata lookup
+- Secure local download
+- Diff retrieval
+- Evidence bundle retrieval
+- Integrity hash reporting
+- Content-type and size metadata
+
+#### Authorization and Access Control
+
+Even in a local-first deployment, the API must enforce action-level policy.
+
+- Story submission, workflow start, approval, rejection, retry, and artifact access should be authorized by role or capability.
+- Approval endpoints must record the approving identity and reject self-approval where policy forbids it.
+- Destructive or high-risk actions require explicit policy checks before command acceptance.
+
+#### Versioning and Idempotency
+
+- Public API routes should be versioned at the contract level.
+- Internal contracts should version independently.
+- Every mutation capable of being retried by the UI, workflow engine, or network stack must accept an idempotency key.
+- Streaming events should include monotonically increasing sequence numbers so reconnecting clients can resume safely.
 
 Example command set:
 
 - `POST /stories`
 - `GET /stories/{storyId}`
+- `GET /stories/{storyId}/dashboard`
 - `POST /stories/{storyId}/decompose`
 - `POST /stories/{storyId}/architecture`
 - `POST /stories/{storyId}/delivery`
 - `GET /runs/{runId}`
+- `GET /runs/{runId}/events`
+- `GET /runs/{runId}/logs/stream`
+- `GET /reviews`
+- `GET /reviews/{reviewId}`
 - `POST /reviews/{reviewId}/approve`
 - `POST /reviews/{reviewId}/request-revision`
+- `GET /artifacts/{artifactId}`
+- `GET /artifacts/{artifactId}/download`
 
 ### Internal Service Contracts
 

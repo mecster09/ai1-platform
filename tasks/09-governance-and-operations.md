@@ -24,6 +24,9 @@ Add policy enforcement, observability, replay support, and cleanup so the platfo
 - [ ] Implement file ownership boundary checks
 - [ ] Implement unapproved schema change checks
 - [ ] Implement dispatch checks against configured and enabled agent types
+- [ ] Implement checks for non-idempotent write routes and undocumented mutation semantics
+- [ ] Implement checks for undocumented streaming endpoints or ad hoc polling paths
+- [ ] Implement checks for missing review-version enforcement on approval commands
 - [ ] Integrate policy checks into validation workflow
 
 ### T-051 Observability
@@ -35,6 +38,8 @@ Add policy enforcement, observability, replay support, and cleanup so the platfo
 - [ ] Add correlation IDs for story, run, workflow, and task
 - [ ] Add Temporal search attributes
 - [ ] Add run-level telemetry and metrics
+- [ ] Add telemetry for streaming connections, published run events, and review command failures
+- [ ] Add Next.js framework instrumentation via `instrumentation.ts`
 - [ ] Verify logs support end-to-end debugging
 
 ### T-052 Replay And Debugging

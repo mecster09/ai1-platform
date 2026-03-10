@@ -33,6 +33,7 @@ Core services:
 - Vector and context store: `ChromaDB`
 - Queue and events: let `Temporal` cover most of this; avoid adding Kafka early
 - Web UI: `Next.js` app for story intake, approvals, run status, logs, and artifacts
+- Public application boundary: `platform-api` split into command, query, streaming, and artifact APIs
 - Observability: `Temporal UI` + structured logs + traces
 
 Provider configuration should be environment-driven and shared across the platform services and agent workers, for example:
@@ -155,7 +156,7 @@ The architect agent should produce machine-readable artifacts, not only Markdown
 - `architecture.md`
 - `api-contract.json`
 - `data-model.json`
-- `sequence-flow.json`
+- `sequence-flow.md`
 - `impact-analysis.json`
 
 ### Front-end Agent
@@ -182,6 +183,7 @@ Constraints:
 - Must not invent backend APIs that conflict with the architect contract
 - Must emit contract mismatches early
 - Must follow file ownership boundaries
+- Must follow App Router defaults, using Server Components by default and Client Components only where interactivity requires them
 
 ### Back-end Agent
 
@@ -270,6 +272,7 @@ Platform actions:
 - Validate required fields
 - Store raw and normalized story
 - Attach supporting artifacts
+- Accept idempotent create commands so repeated submissions do not duplicate stories or uploads
 
 ### Phase B: Decomposition
 
@@ -398,15 +401,25 @@ A local `Next.js` app with pages for:
 - Compare generated diffs
 - View the traceability matrix
 
+Implementation rules:
+
+- Use App Router and Server Components by default.
+- Use Client Components only for approval controls, live log viewers, diff interactions, and uploads.
+- Use Server Actions for same-origin form mutations initiated by `platform-web`.
+- Use Route Handlers only for explicit HTTP needs such as SSE streams, artifact transfer, or external callbacks.
+- Treat run status, logs, approvals, and traceability as dynamic operational views rather than static content.
+
 ### 2. Orchestrator Service
 
 A `Node.js` service that:
 
 - Receives platform commands
+- Exposes command, query, streaming, and artifact endpoints as the public boundary
 - Starts `Temporal` workflows
 - Coordinates agent runs
 - Loads the configured agent registry into workflow context
 - Writes state transitions
+- Enforces idempotency, authorization, and optimistic concurrency on approval commands
 
 ### 3. Agent Runner Services
 
@@ -511,6 +524,10 @@ Every run must return:
    Every output should trace back to story ID, task ID, and acceptance criterion ID.
 5. Deterministic validation
    Never trust "the agent says it is done"; gate on builds, tests, contract validation, lint, type checks, and a review checklist.
+6. Stable API boundary
+   Keep browser-originated interactions behind typed command, query, streaming, and artifact APIs even when `platform-web` and `platform-api` share deployment infrastructure.
+7. Idempotent mutations
+   Story creation, workflow start, retry, cancel, approve, and revision-request actions must accept idempotency keys.
 
 ## Suggested MVP Roadmap
 
@@ -587,6 +604,13 @@ For the stated stack, this is a strong fit:
 - Model access: local model endpoint or OpenAI-compatible provider abstraction
 - Provider configuration: environment variables loaded by `platform-api`, `workflow-worker`, and agent workers
 
+Platform API expectations:
+
+- Command API for create, start, retry, cancel, approve, and revision actions
+- Query API for dashboards, run summaries, review queues, and traceability
+- Streaming API, preferably SSE for MVP, for live run status and log tails
+- Artifact API for uploads, metadata lookup, download, diff retrieval, and evidence access
+
 Do not start with:
 
 - Too many agent frameworks
@@ -609,6 +633,13 @@ Services:
 - `test-agent-worker`
 - `context-service`
 - `workspace-service`
+
+`platform-api` responsibilities should be divided internally into:
+
+- command handlers
+- query/read-model handlers
+- streaming publishers and SSE handlers
+- artifact upload and download handlers
 
 Core workflows:
 

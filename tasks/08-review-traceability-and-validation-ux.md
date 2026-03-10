@@ -21,9 +21,11 @@ Make runs, approvals, artifacts, validation, and traceability visible and action
 
 - [ ] Add API support for run detail views
 - [ ] Add API support for run logs
+- [ ] Add API support for run event and log streaming
 - [ ] Add API support for changed files and artifacts
 - [ ] Build UI for run summaries and timelines
 - [ ] Build UI for run logs and outputs
+- [ ] Use live streaming for operational views with polling only as fallback
 
 ### T-047 Approval UX
 
@@ -35,6 +37,7 @@ Make runs, approvals, artifacts, validation, and traceability visible and action
 - [ ] Build revision request UI
 - [ ] Build rejection UX
 - [ ] Build final review UI
+- [ ] Handle optimistic concurrency failures when review versions are stale
 
 ### T-048 Traceability
 
@@ -56,4 +59,5 @@ Make runs, approvals, artifacts, validation, and traceability visible and action
 - [ ] Build artifact browsing UI
 - [ ] Build validation evidence views
 - [ ] Build review package assembly screens
+- [ ] Distinguish artifact metadata views from authorized artifact download flows
 - [ ] Verify final review has all required evidence

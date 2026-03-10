@@ -1,8 +1,10 @@
 {
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "service": "platform-api",
-  "description": "Baseline API contract for the AI1 Platform command and query boundary.",
+  "description": "Baseline API contract for the AI1 Platform command, query, streaming, and artifact boundary.",
   "protocol": "http-json",
+  "apiVersion": "v1",
+  "transportModes": ["http-json", "sse"],
   "storageArchitecture": {
     "relationalStore": "SQLite",
     "vectorStore": "ChromaDB",
@@ -10,17 +12,33 @@
   },
   "principles": [
     "The platform API is the only public application boundary.",
+    "The public boundary is separated into command, query, streaming, and artifact APIs.",
     "All workflows are started through typed commands.",
     "Agents are configured in advance and made available to workflows and agents through platform-managed registry data.",
     "Internal agent and workflow coordination is artifact-driven and not exposed directly to the UI.",
     "All write operations are auditable and return stable identifiers.",
-    "Delivery-agent selection is driven by the task breakdown and may include one, two, or three of the current built-in delivery agents."
+    "Delivery-agent selection is driven by the task breakdown and may include one, two, or three of the current built-in delivery agents.",
+    "Retriable mutations require idempotency keys.",
+    "Live operational views consume streaming endpoints for status and log updates."
   ],
+  "authorizationModel": {
+    "mode": "role-and-capability",
+    "roles": ["submitter", "reviewer", "operator", "admin"],
+    "notes": [
+      "All mutations must record actor identity.",
+      "Approval endpoints may enforce no-self-approval policies when configured.",
+      "Artifact access is authorized separately from metadata reads."
+    ]
+  },
   "resources": {
     "stories": {
       "create": {
         "method": "POST",
         "path": "/stories",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 }
+        },
         "requestBodySchema": {
           "type": "object",
           "required": [
@@ -84,6 +102,7 @@
       "get": {
         "method": "GET",
         "path": "/stories/{storyId}",
+        "category": "query",
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -91,9 +110,21 @@
           "$ref": "#/schemas/Story"
         }
       },
+      "getDashboard": {
+        "method": "GET",
+        "path": "/stories/{storyId}/dashboard",
+        "category": "query",
+        "pathParams": {
+          "storyId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/StoryDashboardView"
+        }
+      },
       "list": {
         "method": "GET",
         "path": "/stories",
+        "category": "query",
         "queryParams": {
           "status": {
             "type": "string",
@@ -130,6 +161,10 @@
       "upload": {
         "method": "POST",
         "path": "/stories/{storyId}/artifacts",
+        "category": "artifact",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 }
+        },
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -149,12 +184,38 @@
         "responseBodySchema": {
           "$ref": "#/schemas/ArtifactReference"
         }
+      },
+      "getMetadata": {
+        "method": "GET",
+        "path": "/artifacts/{artifactId}",
+        "category": "artifact",
+        "pathParams": {
+          "artifactId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/ArtifactReference"
+        }
+      },
+      "download": {
+        "method": "GET",
+        "path": "/artifacts/{artifactId}/download",
+        "category": "artifact",
+        "pathParams": {
+          "artifactId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/ArtifactDownload"
+        }
       }
     },
     "workflows": {
       "decomposeStory": {
         "method": "POST",
         "path": "/stories/{storyId}/decompose",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 }
+        },
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -171,6 +232,10 @@
       "createArchitecture": {
         "method": "POST",
         "path": "/stories/{storyId}/architecture",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 }
+        },
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -187,6 +252,10 @@
       "startDelivery": {
         "method": "POST",
         "path": "/stories/{storyId}/delivery",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 }
+        },
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -210,6 +279,10 @@
       "validateDelivery": {
         "method": "POST",
         "path": "/stories/{storyId}/validate",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 }
+        },
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -231,6 +304,7 @@
       "get": {
         "method": "GET",
         "path": "/runs/{runId}",
+        "category": "query",
         "pathParams": {
           "runId": { "type": "string" }
         },
@@ -241,6 +315,7 @@
       "listByStory": {
         "method": "GET",
         "path": "/stories/{storyId}/runs",
+        "category": "query",
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -257,6 +332,7 @@
       "getLogs": {
         "method": "GET",
         "path": "/runs/{runId}/logs",
+        "category": "query",
         "pathParams": {
           "runId": { "type": "string" }
         },
@@ -277,9 +353,37 @@
           }
         }
       },
+      "streamLogs": {
+        "method": "GET",
+        "path": "/runs/{runId}/logs/stream",
+        "category": "stream",
+        "transport": "sse",
+        "pathParams": {
+          "runId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/RunLogEvent"
+        }
+      },
+      "streamEvents": {
+        "method": "GET",
+        "path": "/runs/{runId}/events",
+        "category": "stream",
+        "transport": "sse",
+        "pathParams": {
+          "runId": { "type": "string" }
+        },
+        "queryParams": {
+          "afterSequence": { "type": "number" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/RunEvent"
+        }
+      },
       "getDiff": {
         "method": "GET",
         "path": "/runs/{runId}/diff",
+        "category": "artifact",
         "pathParams": {
           "runId": { "type": "string" }
         },
@@ -305,9 +409,43 @@
       }
     },
     "reviews": {
+      "list": {
+        "method": "GET",
+        "path": "/reviews",
+        "category": "query",
+        "queryParams": {
+          "status": { "type": "string" },
+          "stage": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "$ref": "#/schemas/ReviewDecision" }
+            }
+          }
+        }
+      },
+      "get": {
+        "method": "GET",
+        "path": "/reviews/{reviewId}",
+        "category": "query",
+        "pathParams": {
+          "reviewId": { "type": "string" }
+        },
+        "responseBodySchema": {
+          "$ref": "#/schemas/ReviewDecision"
+        }
+      },
       "approve": {
         "method": "POST",
         "path": "/reviews/{reviewId}/approve",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 },
+          "If-Match-Version": { "type": "string", "minLength": 1 }
+        },
         "pathParams": {
           "reviewId": { "type": "string" }
         },
@@ -326,6 +464,11 @@
       "requestRevision": {
         "method": "POST",
         "path": "/reviews/{reviewId}/request-revision",
+        "category": "command",
+        "requiredHeaders": {
+          "Idempotency-Key": { "type": "string", "minLength": 8 },
+          "If-Match-Version": { "type": "string", "minLength": 1 }
+        },
         "pathParams": {
           "reviewId": { "type": "string" }
         },
@@ -350,6 +493,7 @@
       "getMatrix": {
         "method": "GET",
         "path": "/stories/{storyId}/traceability",
+        "category": "query",
         "pathParams": {
           "storyId": { "type": "string" }
         },
@@ -438,7 +582,21 @@
         "artifactId": { "type": "string" },
         "artifactType": { "type": "string" },
         "path": { "type": "string" },
+        "contentType": { "type": "string" },
+        "sizeBytes": { "type": "number" },
+        "integrityHash": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ArtifactDownload": {
+      "type": "object",
+      "properties": {
+        "artifactId": { "type": "string" },
+        "downloadUrl": { "type": "string" },
+        "contentType": { "type": "string" },
+        "sizeBytes": { "type": "number" },
+        "integrityHash": { "type": "string" },
+        "expiresAt": { "type": "string", "format": "date-time" }
       }
     },
     "WorkflowStartResponse": {
@@ -498,6 +656,7 @@
       "type": "object",
       "properties": {
         "reviewId": { "type": "string" },
+        "version": { "type": "number" },
         "reviewStage": {
           "type": "string",
           "enum": ["clarification", "architecture", "delivery", "final-review"]
@@ -509,6 +668,43 @@
         "decisionMaker": { "type": "string" },
         "comment": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "RunEvent": {
+      "type": "object",
+      "properties": {
+        "sequence": { "type": "number" },
+        "runId": { "type": "string" },
+        "storyId": { "type": "string" },
+        "eventType": { "type": "string" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "payload": { "type": "object" }
+      }
+    },
+    "RunLogEvent": {
+      "type": "object",
+      "properties": {
+        "sequence": { "type": "number" },
+        "runId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "level": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "StoryDashboardView": {
+      "type": "object",
+      "properties": {
+        "story": { "$ref": "#/schemas/Story" },
+        "runs": {
+          "type": "array",
+          "items": { "$ref": "#/schemas/RunSummary" }
+        },
+        "pendingReviews": {
+          "type": "array",
+          "items": { "$ref": "#/schemas/ReviewDecision" }
+        },
+        "latestValidationStatus": { "type": "string" }
       }
     }
   },
@@ -540,6 +736,14 @@
         "storyId",
         "decision",
         "decisionMaker"
+      ]
+    },
+    "RunEventEnvelope": {
+      "requiredFields": [
+        "sequence",
+        "runId",
+        "eventType",
+        "timestamp"
       ]
     }
   }

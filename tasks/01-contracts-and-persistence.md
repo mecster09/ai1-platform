@@ -30,8 +30,15 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Implement TypeScript types for `TestScenario`
 - [ ] Implement TypeScript types for `AgentRunResult`
 - [ ] Implement TypeScript types for `ReviewDecision`
+- [ ] Implement TypeScript types for `RunEvent`
+- [ ] Implement TypeScript types for `ArtifactReference`
+- [ ] Implement TypeScript types for `UserIdentity`
+- [ ] Implement TypeScript types for `IdempotencyKey`
+- [ ] Implement TypeScript types for `ApiSubscription`
 - [ ] Add contract support for `selectedAgentTypes`
 - [ ] Add contract support for registry-backed `agentType` values
+- [ ] Add contract support for `apiBoundaryVersion` and `emittedEvents`
+- [ ] Add contract support for review version and idempotent mutation metadata
 
 ### T-007 JSON Schema Package
 
@@ -42,6 +49,7 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Extract schemas from [schemas.md](c:/Code/AI1-Platform/docs/schemas.md)
 - [ ] Store schemas as versioned `.json` files
 - [ ] Add schema export helpers
+- [ ] Add schemas for run events, artifact metadata, idempotency records, and API-boundary-aware review commands
 - [ ] Verify schemas load correctly at runtime
 
 ### T-008 Runtime Validation Helpers
@@ -53,6 +61,7 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Add workflow input validators
 - [ ] Add agent input validators
 - [ ] Add agent output validators
+- [ ] Add idempotency-key and review-version validators for public mutation commands
 - [ ] Add reusable validation error formatting
 
 ### T-009 SQLite Access Layer
@@ -81,10 +90,16 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Create migrations for `agent_run_artifacts`
 - [ ] Create migrations for `validation_reports`
 - [ ] Create migrations for `review_decisions`
+- [ ] Create migrations for `run_events`
+- [ ] Create migrations for `idempotency_keys`
+- [ ] Create migrations for `user_identities`
+- [ ] Create migrations for `api_subscriptions`
 - [ ] Create migrations for `trace_links`
 - [ ] Create migrations for `workspace_runs`
 - [ ] Create migrations for `context_documents`
 - [ ] Add storage for story-level selected agent types
+- [ ] Add storage for artifact metadata including content type, size, and integrity hash
+- [ ] Add storage for review version and optimistic concurrency fields
 
 ### T-011 Repository Modules
 
@@ -99,5 +114,10 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Implement reviews repository
 - [ ] Implement validation repository
 - [ ] Implement traceability repository
+- [ ] Implement idempotency repository
+- [ ] Implement run events repository
+- [ ] Implement user identity repository
+- [ ] Implement subscription repository for streaming consumers
 - [ ] Support story reads and writes for selected agent types
+- [ ] Add review-version-aware writes for approval and revision decisions
 - [ ] Add repository-level tests

@@ -46,6 +46,7 @@ The parent workflow is recommended even though the plan lists the stage workflow
 - Retries are automatic for transient failures and explicit for policy or validation failures
 - Every workflow and activity must carry `storyId`, `runId`, and stage metadata
 - Workflows must have access to the configured agent registry so dispatch is constrained to enabled agents
+- Workflow-triggered mutations must preserve the same idempotency and approval-version semantics enforced by the public API
 
 ## Task Queues
 
@@ -103,6 +104,7 @@ Recommended activity names:
 - `PersistAcceptanceCriteria`
 - `StoreArtifacts`
 - `CreateReviewDecision`
+- `ValidateIdempotencyKey`
 - `UpdateStoryStatus`
 - `RecordAuditEntry`
 - `FetchScopedContext`
@@ -115,6 +117,8 @@ Recommended activity names:
 - `RunValidationSuite`
 - `PersistValidationReport`
 - `AssembleReviewPackage`
+- `PublishRunEvent`
+- `PublishLogStreamEvent`
 - `PublishRunArtifacts`
 - `PersistAgentRunResult`
 
@@ -186,12 +190,13 @@ Inputs:
 
 Activities:
 
-1. `ValidateStoryInput`
-2. `PersistStory`
-3. `PersistAcceptanceCriteria`
-4. `StoreArtifacts`
-5. `RecordAuditEntry`
-6. `UpdateStoryStatus(submitted)`
+1. `ValidateIdempotencyKey`
+2. `ValidateStoryInput`
+3. `PersistStory`
+4. `PersistAcceptanceCriteria`
+5. `StoreArtifacts`
+6. `RecordAuditEntry`
+7. `UpdateStoryStatus(submitted)`
 
 Outputs:
 
@@ -232,7 +237,8 @@ Activities:
 2. `DispatchTasksAgent`
 3. `PersistAgentRunResult`
 4. `PublishRunArtifacts`
-5. `UpdateStoryStatus(decomposed)`
+5. `PublishRunEvent`
+6. `UpdateStoryStatus(decomposed)`
 
 Expected outputs:
 
@@ -288,7 +294,8 @@ Activities:
 2. `DispatchArchitectAgent`
 3. `PersistAgentRunResult`
 4. `PublishRunArtifacts`
-5. Determine whether approval is mandatory
+5. `PublishRunEvent`
+6. Determine whether approval is mandatory
 
 Expected outputs:
 
@@ -350,6 +357,7 @@ Activities:
 3. `DispatchFrontendAgent`
 4. `PersistAgentRunResult`
 5. `PublishRunArtifacts`
+6. `PublishRunEvent`
 
 Outputs:
 
@@ -385,6 +393,7 @@ Activities:
 3. `DispatchBackendAgent`
 4. `PersistAgentRunResult`
 5. `PublishRunArtifacts`
+6. `PublishRunEvent`
 
 Outputs:
 
@@ -420,6 +429,7 @@ Activities:
 3. `DispatchTestAgent`
 4. `PersistAgentRunResult`
 5. `PublishRunArtifacts`
+6. `PublishRunEvent`
 
 Outputs:
 
@@ -452,7 +462,8 @@ Activities:
 1. `RunValidationSuite`
 2. `PersistValidationReport`
 3. `PublishRunArtifacts`
-4. `UpdateStoryStatus(validating)`
+4. `PublishRunEvent`
+5. `UpdateStoryStatus(validating)`
 
 Validation checks:
 
@@ -505,7 +516,8 @@ Activities:
 
 1. `AssembleReviewPackage`
 2. `CreateReviewDecision(reviewStage=final-review, status=pending)`
-3. `UpdateStoryStatus(in-review)`
+3. `PublishRunEvent`
+4. `UpdateStoryStatus(in-review)`
 
 Signals awaited:
 
@@ -572,7 +584,7 @@ All human approvals should follow the same pattern:
 1. Workflow creates a `ReviewDecision` record through an activity
 2. UI presents pending review
 3. Reviewer acts in `platform-web`
-4. `platform-api` validates the decision and signals the workflow
+4. `platform-api` validates the decision, idempotency key, and review version, then signals the workflow
 5. Workflow resumes from the exact wait point
 
 This applies to:
@@ -592,12 +604,14 @@ Required idempotency keys:
 - `workflowId`
 - `reviewId` where relevant
 - `artifactId` for publish operations
+- command idempotency key for public mutation requests
 
 Examples:
 
 - `PersistStory` should upsert by `storyId`
 - `CreateReviewDecision` should deduplicate by `workflowId + reviewStage`
 - `PersistValidationReport` should deduplicate by `storyId + validation run`
+- approval and revision handling should reject stale review versions instead of silently overwriting decisions
 
 ## Failure and Recovery Rules
 

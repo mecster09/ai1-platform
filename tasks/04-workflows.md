@@ -25,6 +25,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Add signal types
 - [ ] Add task queue constants
 - [ ] Add workflow ID helpers
+- [ ] Add types for run events, idempotency validation inputs, and review version checks
 
 ### T-023 Workflow Worker Bootstrap
 
@@ -45,6 +46,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - Dependencies: `T-023`, `tasks/01-contracts-and-persistence.md#t-011-repository-modules`, `tasks/03-platform-api-and-web.md#t-018-artifact-storage`, `tasks/02-agent-registry.md#t-013-agent-registry-persistence-and-loading`
 
 - [ ] Implement `ValidateStoryInput`
+- [ ] Implement `ValidateIdempotencyKey`
 - [ ] Implement `PersistStory`
 - [ ] Implement `PersistAcceptanceCriteria`
 - [ ] Implement `StoreArtifacts`
@@ -52,6 +54,8 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Implement `UpdateStoryStatus`
 - [ ] Implement `RecordAuditEntry`
 - [ ] Implement `PersistAgentRunResult`
+- [ ] Implement `PublishRunEvent`
+- [ ] Implement activity support for log-stream event publication
 - [ ] Implement `PublishRunArtifacts`
 - [ ] Implement `PersistValidationReport`
 - [ ] Implement `AssembleReviewPackage`
@@ -66,6 +70,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Wire it to story intake API
 - [ ] Persist audit entries and status transitions
 - [ ] Verify idempotent replay behavior
+- [ ] Verify public command idempotency is preserved through workflow-triggered persistence
 
 ### T-026 Decompose Story Workflow
 
@@ -90,6 +95,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Add architecture review wait state
 - [ ] Add approve, revise, reject, and cancel handling
 - [ ] Persist architecture artifacts and approval state
+- [ ] Publish run events for architecture generation and approval wait states
 
 ### T-028 Delivery Workflows
 
@@ -102,6 +108,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Add conditional dispatch based on selected and enabled agent types
 - [ ] Add fan-out and fan-in coordination for only selected delivery workflows
 - [ ] Persist delivery-stage run outcomes
+- [ ] Publish delivery run lifecycle events for streaming consumers
 
 ### T-029 Validate Delivery Workflow
 
@@ -115,6 +122,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Run architecture policy checks
 - [ ] Run Playwright checks when test-automation output exists or the selected agent set requires them
 - [ ] Persist validation results and blocked state
+- [ ] Publish validation progress and completion events
 
 ### T-030 Review And Merge Workflow
 
@@ -126,6 +134,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Add approve, revise, reject, and cancel handling
 - [ ] Route revisions to the correct stage
 - [ ] Persist final decision and completion state
+- [ ] Require review version and idempotency validation before approval-related signals are accepted
 
 ### T-031 Parent Story Delivery Workflow
 
@@ -137,3 +146,4 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Compose only selected delivery workflows in parallel
 - [ ] Handle blocked and rejected terminal states
 - [ ] Expose workflow queries for status and approvals
+- [ ] Ensure workflow state changes are mirrored through published run events for API streaming

@@ -1,5 +1,5 @@
 {
-  "modelVersion": "1.1.0",
+  "modelVersion": "1.2.0",
   "description": "Canonical data model for the AI1 Platform aligned to the local-first architecture.",
   "agentRegistry": {
     "controlAgents": ["tasks", "architect"],
@@ -35,6 +35,17 @@
         "updatedAt": "datetime"
       }
     },
+    "UserIdentity": {
+      "primaryKey": "userId",
+      "fields": {
+        "userId": "string",
+        "displayName": "string",
+        "roles": "string[]",
+        "capabilities": "string[]",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
+    },
     "Story": {
       "primaryKey": "storyId",
       "fields": {
@@ -49,9 +60,10 @@
         "affectedModules": "string[]",
         "selectedAgentTypes": "string[]",
         "createdBy": "string",
+        "currentWorkflowId": "string|null",
+        "currentReviewId": "string|null",
         "createdAt": "datetime",
-        "updatedAt": "datetime",
-        "currentWorkflowId": "string|null"
+        "updatedAt": "datetime"
       }
     },
     "AcceptanceCriterion": {
@@ -155,6 +167,7 @@
         "startedAt": "datetime|null",
         "completedAt": "datetime|null",
         "retryCount": "number",
+        "currentSequence": "number",
         "createdAt": "datetime"
       }
     },
@@ -172,6 +185,19 @@
         "createdAt": "datetime"
       }
     },
+    "RunEvent": {
+      "primaryKey": "runEventId",
+      "fields": {
+        "runEventId": "string",
+        "runId": "string",
+        "storyId": "string",
+        "sequence": "number",
+        "eventType": "run-status|workflow-status|log|approval-state|validation-progress",
+        "status": "string|null",
+        "payload": "json",
+        "createdAt": "datetime"
+      }
+    },
     "Artifact": {
       "primaryKey": "artifactId",
       "fields": {
@@ -182,6 +208,9 @@
         "artifactType": "architecture-doc|api-contract|data-model|sequence-flow|impact-analysis|patch|test-report|validation-log|evidence|attachment",
         "format": "md|json|patch|txt|html|png|zip",
         "path": "string",
+        "contentType": "string|null",
+        "sizeBytes": "number|null",
+        "downloadPolicy": "metadata-only|authorized-download",
         "schemaVersion": "string|null",
         "integrityHash": "string|null",
         "createdAt": "datetime"
@@ -223,11 +252,26 @@
         "storyId": "string",
         "runId": "string|null",
         "reviewStage": "clarification|architecture|delivery|final-review",
+        "version": "number",
         "status": "pending|approved|revision-requested|rejected",
         "decisionMaker": "string|null",
         "comments": "string[]",
         "createdAt": "datetime",
         "updatedAt": "datetime"
+      }
+    },
+    "IdempotencyKey": {
+      "primaryKey": "idempotencyKeyId",
+      "fields": {
+        "idempotencyKeyId": "string",
+        "key": "string",
+        "scope": "story-create|artifact-upload|workflow-command|review-command",
+        "resourceType": "story|artifact|workflow|review",
+        "resourceId": "string|null",
+        "requestHash": "string",
+        "responseRef": "string|null",
+        "expiresAt": "datetime|null",
+        "createdAt": "datetime"
       }
     },
     "TraceLink": {
@@ -271,11 +315,24 @@
         "createdAt": "datetime",
         "updatedAt": "datetime"
       }
+    },
+    "ApiSubscription": {
+      "primaryKey": "subscriptionId",
+      "fields": {
+        "subscriptionId": "string",
+        "storyId": "string|null",
+        "runId": "string|null",
+        "channel": "run-events|run-logs|review-events",
+        "lastDeliveredSequence": "number|null",
+        "createdAt": "datetime",
+        "updatedAt": "datetime"
+      }
     }
   },
   "relationships": [
     { "from": "Product", "to": "Epic", "type": "one-to-many", "via": "productId" },
     { "from": "Epic", "to": "Story", "type": "one-to-many", "via": "epicId" },
+    { "from": "UserIdentity", "to": "Story", "type": "one-to-many", "via": "createdBy" },
     { "from": "Story", "to": "AcceptanceCriterion", "type": "one-to-many", "via": "storyId" },
     { "from": "Story", "to": "Task", "type": "one-to-many", "via": "storyId" },
     { "from": "Task", "to": "TaskDependency", "type": "one-to-many", "via": "taskId" },
@@ -284,13 +341,16 @@
     { "from": "ArchitectureBlueprint", "to": "DataModelChange", "type": "one-to-many", "via": "blueprintId" },
     { "from": "Story", "to": "AgentRun", "type": "one-to-many", "via": "storyId" },
     { "from": "AgentRun", "to": "AgentRunResult", "type": "one-to-one", "via": "runId" },
+    { "from": "AgentRun", "to": "RunEvent", "type": "one-to-many", "via": "runId" },
     { "from": "AgentRun", "to": "Artifact", "type": "one-to-many", "via": "runId" },
     { "from": "Story", "to": "TestScenario", "type": "one-to-many", "via": "storyId" },
     { "from": "AcceptanceCriterion", "to": "TestScenario", "type": "one-to-many", "via": "acceptanceCriterionId" },
     { "from": "AgentRun", "to": "ValidationReport", "type": "one-to-many", "via": "runId" },
     { "from": "Story", "to": "ReviewDecision", "type": "one-to-many", "via": "storyId" },
+    { "from": "UserIdentity", "to": "ReviewDecision", "type": "one-to-many", "via": "decisionMaker" },
     { "from": "Story", "to": "TraceLink", "type": "one-to-many", "via": "storyId" },
-    { "from": "AgentRun", "to": "WorkspaceRun", "type": "one-to-one", "via": "runId" }
+    { "from": "AgentRun", "to": "WorkspaceRun", "type": "one-to-one", "via": "runId" },
+    { "from": "Story", "to": "ApiSubscription", "type": "one-to-many", "via": "storyId" }
   ],
   "readModels": {
     "StoryDashboardView": {
@@ -303,7 +363,15 @@
     },
     "RunTimelineView": {
       "description": "Chronological run and approval timeline per story.",
-      "sourceEntities": ["AgentRun", "AgentRunResult", "ReviewDecision", "ValidationReport"]
+      "sourceEntities": ["AgentRun", "AgentRunResult", "ReviewDecision", "ValidationReport", "RunEvent"]
+    },
+    "ReviewQueueView": {
+      "description": "Pending and recently resolved review work items.",
+      "sourceEntities": ["ReviewDecision", "Story", "AgentRun"]
+    },
+    "ArtifactCatalogView": {
+      "description": "Artifact metadata and download eligibility without loading artifact bodies.",
+      "sourceEntities": ["Artifact", "AgentRun", "Story"]
     }
   }
 }

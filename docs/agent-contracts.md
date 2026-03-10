@@ -44,6 +44,7 @@ Every agent run must receive:
 - `contextScope`
 - `outputSchemaVersion`
 - `policyConstraints`
+- `apiBoundaryVersion`
 
 Every agent run must return:
 
@@ -56,6 +57,7 @@ Every agent run must return:
 - `blockers`
 - `confidence`
 - `reviewNotes`
+- `emittedEvents`
 
 `agentType` should be validated against the platform agent registry rather than a hard-coded assumption that every story uses all delivery agents.
 
@@ -90,6 +92,7 @@ Canonical shape:
     "storyScopedOnly": true
   },
   "outputSchemaVersion": "1.1.0",
+  "apiBoundaryVersion": "v1",
   "policyConstraints": {
     "approvalRequiredForSchemaChange": true,
     "allowedPaths": ["apps/platform-web/**"],
@@ -118,7 +121,8 @@ Canonical shape:
   "assumptions": [],
   "blockers": [],
   "confidence": 0.87,
-  "reviewNotes": []
+  "reviewNotes": [],
+  "emittedEvents": []
 }
 ```
 
@@ -299,6 +303,7 @@ The architect agent must return a payload shaped like:
 - schema and API impacts are explicit
 - implementation sequencing is actionable
 - approval-required changes are flagged
+- public API changes are categorized as command, query, streaming, or artifact boundary changes where relevant
 
 ### Forbidden Behavior
 
@@ -371,6 +376,8 @@ The front-end agent must return a payload shaped like:
 - changed files stay within allowed ownership boundaries
 - contract mismatches are emitted immediately
 - generated code remains traceable to story and task IDs
+- UI mutations do not bypass the approved command boundary
+- live operational views consume approved streaming contracts rather than inventing ad hoc polling paths
 
 ### Forbidden Behavior
 
@@ -445,6 +452,7 @@ The back-end agent must return a payload shaped like:
 - contract validation is preserved
 - schema changes are only implemented when approval gates are satisfied
 - front-end and test consumers receive contract-stable outputs
+- updated API artifacts include idempotency, concurrency, and artifact metadata requirements when affected by the change
 
 ### Forbidden Behavior
 
@@ -577,6 +585,9 @@ Every agent run should carry explicit policy constraints:
 - `requiresApprovedDataModelChange`
 - `mustEmitContractMismatch`
 - `mustRecordTraceability`
+- `mustUseApprovedApiBoundary`
+- `requiresIdempotentMutations`
+- `requiresReviewVersionCheck`
 
 Example:
 
@@ -588,7 +599,10 @@ Example:
   "requiresApprovedApiContract": true,
   "requiresApprovedDataModelChange": false,
   "mustEmitContractMismatch": true,
-  "mustRecordTraceability": true
+  "mustRecordTraceability": true,
+  "mustUseApprovedApiBoundary": true,
+  "requiresIdempotentMutations": true,
+  "requiresReviewVersionCheck": true
 }
 ```
 
@@ -630,6 +644,7 @@ The orchestrator should reject or block runs when:
 - changed files fall outside `allowedPaths`
 - required traceability fields are missing
 - contract mismatch is detected but not reported
+- an agent introduces unapproved API surface such as ad hoc routes, undocumented streaming endpoints, or non-idempotent write operations
 
 ## Why These Contracts Fit The Plan
 

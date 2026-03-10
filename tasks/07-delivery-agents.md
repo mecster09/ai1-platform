@@ -26,6 +26,8 @@ Build the current built-in delivery agents with strict contracts and workspace i
 - [ ] Generate patch artifacts
 - [ ] Detect and emit contract mismatches
 - [ ] Generate component or integration tests where relevant
+- [ ] Enforce Next.js App Router defaults, Server Components by default, and limited Client Component usage
+- [ ] Prevent ad hoc polling or mutation paths that bypass approved command or streaming contracts
 - [ ] Add worker-level tests
 
 ### T-044 Back-End Agent Worker
@@ -40,6 +42,7 @@ Build the current built-in delivery agents with strict contracts and workspace i
 - [ ] Generate patch artifacts
 - [ ] Generate tests and stubs where relevant
 - [ ] Update API contract artifacts where required
+- [ ] Include idempotency, review concurrency, and artifact metadata requirements in updated API artifacts when relevant
 - [ ] Add worker-level tests
 
 ### T-045 Test-Automation Agent Worker

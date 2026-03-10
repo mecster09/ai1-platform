@@ -24,19 +24,25 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Add structured logging
 - [ ] Add error handling and response shaping
 - [ ] Add health endpoint
+- [ ] Add API versioning convention for public routes
+- [ ] Add middleware or helpers for correlation IDs, idempotency extraction, and authorization context
 
 ### T-016 Public API Surface
 
-- Outcome: `platform-api` exposes the planned command and query boundary.
+- Outcome: `platform-api` exposes the planned command, query, streaming, and artifact boundary.
 - Dependencies: `T-015`, `tasks/01-contracts-and-persistence.md#t-008-runtime-validation-helpers`, `tasks/01-contracts-and-persistence.md#t-011-repository-modules`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
 
 - [ ] Implement stories resource routes
 - [ ] Implement artifact routes
 - [ ] Implement workflow start routes
 - [ ] Implement runs query routes
+- [ ] Implement run event and log streaming routes
 - [ ] Implement review routes
 - [ ] Implement traceability routes
+- [ ] Split handlers internally into command, query, streaming, and artifact modules
 - [ ] Support registry-backed delivery selection in workflow start routes
+- [ ] Enforce idempotency keys on retriable write routes
+- [ ] Enforce review version checks on approve and revision-request routes
 - [ ] Validate routes against [api-contract.json](c:/Code/AI1-Platform/docs/architecture/api-contract.json)
 
 ### T-017 Story Intake API
@@ -47,8 +53,10 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Implement `POST /stories`
 - [ ] Implement `GET /stories/{storyId}`
 - [ ] Implement `GET /stories`
+- [ ] Implement `GET /stories/{storyId}/dashboard`
 - [ ] Persist stories and acceptance criteria
 - [ ] Return story-level selected agent types where available
+- [ ] Deduplicate retried `POST /stories` requests using idempotency keys
 - [ ] Return schema-valid API responses
 
 ### T-018 Artifact Storage
@@ -61,6 +69,9 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Support story attachment uploads
 - [ ] Add artifact path conventions under `artifacts/`
 - [ ] Add artifact retrieval helpers
+- [ ] Implement artifact metadata lookup separate from authorized artifact download
+- [ ] Persist content type, size, and integrity hash metadata
+- [ ] Implement diff and evidence retrieval helpers aligned with artifact routes
 
 ### T-019 Platform Web Skeleton
 
@@ -70,8 +81,11 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Scaffold `apps/platform-web` in Next.js + TypeScript
 - [ ] Add app shell and routing
 - [ ] Add shared API client layer
+- [ ] Add Server Action support for same-origin UI mutations
+- [ ] Add SSE client support for live run and log views
 - [ ] Add loading and error states
 - [ ] Add root layout and navigation
+- [ ] Add `instrumentation.ts`
 
 ### T-020 Story Intake UI
 
@@ -81,7 +95,8 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Build create-story form
 - [ ] Add acceptance criteria entry UX
 - [ ] Add constraints, priority, affected modules, and design reference inputs
-- [ ] Submit story to `platform-api`
+- [ ] Submit story to `platform-api` through the approved command boundary
+- [ ] Include idempotency keys on story-create submissions
 - [ ] Show success and validation errors cleanly
 
 ### T-021 Story Detail and Status UI
@@ -94,4 +109,6 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Show decomposition and architecture summary placeholders
 - [ ] Show selected agent set and configured availability summary
 - [ ] Show artifacts and run references
+- [ ] Render dynamic operational views with Server Components by default and Client Components only where interactivity requires them
+- [ ] Prepare live status and log sections to consume streaming endpoints
 - [ ] Prepare page structure for approvals and traceability

@@ -8,20 +8,27 @@ The platform uses workflow orchestration, typed artifacts, and approval gates in
 
 It aligns with the local-first architecture:
 
-- `SQLite` stores structured platform state, approvals, and traceability
-- `ChromaDB` supports scoped vector retrieval for context-service
+- `SQLite` stores structured platform state, approvals, traceability, idempotency records, and run events
+- `ChromaDB` supports scoped vector retrieval for `context-service`
 - Filesystem storage holds generated artifacts, logs, patches, and evidence
+
+API boundary rules for this flow:
+
+- Browser-originated interactions use the public `platform-api` boundary.
+- `platform-web` may use `Next.js` Server Components and Server Actions, but those entry points still route through the same command, query, streaming, and artifact contracts.
+- Live run views use streaming endpoints for status and logs; polling is fallback behavior only.
+- Every retriable mutation carries an idempotency key.
 
 ## Primary Flow
 
 ### Step 1: Story Intake
 
 1. The user creates a story in `platform-web`.
-2. `platform-web` sends the story payload to `platform-api`.
-3. `platform-api` validates the payload.
+2. `platform-web` submits the story through a typed command boundary backed by `platform-api`.
+3. `platform-api` validates the payload and authorization context.
 4. `platform-api` persists the `Story` and `AcceptanceCriterion` records in `SQLite`.
 5. `platform-api` stores uploaded attachments as artifacts on the local filesystem and stores metadata in `SQLite`.
-6. `platform-api` starts `CreateStoryWorkflow` and `DecomposeStoryWorkflow` in `Temporal`.
+6. `platform-api` records the idempotency key and starts `CreateStoryWorkflow` and `DecomposeStoryWorkflow` in `Temporal`.
 7. `Temporal` records the workflow start and queues the decomposition activity.
 
 ## Decomposition Flow
@@ -55,6 +62,7 @@ If ambiguity is above threshold:
 4. The reviewer either:
    - Supplies missing information and resumes the workflow
    - Rejects the story for revision
+5. Approval or revision commands use optimistic concurrency and idempotency controls.
 
 If clarified successfully, the workflow resumes into architecture.
 
@@ -122,6 +130,7 @@ Once architecture is approved:
 ```
 
 5. `context-service` supplies agent-scoped retrieval results using `SQLite` metadata filters and `ChromaDB` semantic search.
+6. `platform-api` begins publishing run lifecycle events and log streams for subscribed UI clients.
 
 ### Step 5: Front-End Agent
 
@@ -137,6 +146,7 @@ Once architecture is approved:
    - Component or integration tests
    - Assumptions and blockers
 4. The worker stores run results and artifacts.
+5. Artifact metadata becomes queryable immediately even if the full artifact body is retrieved later through artifact download endpoints.
 
 ### Step 6: Back-End Agent
 
@@ -153,6 +163,7 @@ Once architecture is approved:
    - Mocks or stubs
    - Assumptions and blockers
 4. The worker stores run results and artifacts.
+5. API stubs or updated service contracts are published as versioned artifacts when applicable.
 
 ### Step 7: Test-Automation Agent
 
@@ -168,6 +179,7 @@ Once architecture is approved:
    - Helpers
    - Evidence mapping metadata
 4. The worker stores test artifacts and blockers.
+5. Test generation progress is emitted as run events so the UI can update without full-page refresh.
 
 ## Validation Flow
 
@@ -194,6 +206,7 @@ Once architecture is approved:
    - Logs
    - Evidence artifacts
 4. The validation state is persisted and linked to the story and runs.
+5. `platform-api` emits validation progress and completion events to active subscribers.
 
 ### Validation Failure Branch
 
@@ -205,7 +218,8 @@ If validation fails:
    - Affected files
    - Related tasks
    - Evidence links
-3. A human can choose to:
+3. Artifact endpoints provide evidence metadata first and authorized download links when the reviewer opens a specific artifact.
+4. A human can choose to:
    - Retry validation
    - Route back to affected delivery agents
    - Reject the delivery bundle
@@ -221,8 +235,9 @@ If validation fails:
    - Validation evidence
    - Traceability matrix
    - Review checklist
-3. `platform-web` presents the package to the human reviewer.
-4. The reviewer can:
+3. `platform-api` applies authorization policy before exposing approval actions or artifact download links.
+4. `platform-web` presents the package to the human reviewer.
+5. The reviewer can:
    - Approve
    - Request revision
    - Reject
@@ -231,7 +246,7 @@ If validation fails:
 
 If approved:
 
-1. `ReviewDecision` is persisted as approved.
+1. `ReviewDecision` is persisted as approved with version and actor metadata.
 2. The workflow marks the story as completed.
 3. The platform prepares a merge bundle or branch handoff.
 
@@ -252,9 +267,10 @@ If rejected:
 
 ```text
 User -> platform-web: Create story
-platform-web -> platform-api: Submit story payload
+platform-web -> platform-api: Submit story payload + Idempotency-Key
 platform-api -> SQLite: Save story + acceptance criteria
 platform-api -> Artifact Store: Save attachments
+platform-api -> SQLite: Save idempotency record
 platform-api -> Temporal: Start CreateStoryWorkflow / DecomposeStoryWorkflow
 
 Temporal -> tasks-agent-worker: Execute decomposition
@@ -278,13 +294,15 @@ architect-agent-worker -> Temporal: Return result
 Temporal -> platform-api: Request architecture approval
 platform-api -> platform-web: Show architecture review
 Reviewer -> platform-web: Approve or request revision
-platform-web -> platform-api: Submit review decision
+platform-web -> platform-api: Submit review decision + Idempotency-Key + If-Match-Version
 platform-api -> SQLite: Save review decision
 platform-api -> Temporal: Send review signal
 
 Temporal -> frontend-agent-worker: Start FE run if selected
 Temporal -> backend-agent-worker: Start BE run if selected
 Temporal -> test-agent-worker: Start test generation run if selected
+platform-api -> platform-web: Stream run events
+platform-api -> platform-web: Stream log events
 
 frontend-agent-worker -> workspace-service: Provision FE workspace
 backend-agent-worker -> workspace-service: Provision BE workspace
@@ -297,11 +315,12 @@ test-agent-worker -> Artifact Store: Save Playwright artifacts
 Temporal -> workspace-service: Run validation suite
 workspace-service -> Artifact Store: Save logs and evidence
 workspace-service -> SQLite: Save validation report
+platform-api -> platform-web: Stream validation updates
 
 Temporal -> platform-api: Request final review
 platform-api -> platform-web: Show review package
 Reviewer -> platform-web: Approve / revise / reject
-platform-web -> platform-api: Submit final decision
+platform-web -> platform-api: Submit final decision + Idempotency-Key + If-Match-Version
 platform-api -> SQLite: Save review decision
 platform-api -> Temporal: Send final review signal
 Temporal -> platform-api: Mark workflow completed or reroute
@@ -354,6 +373,8 @@ Mandatory gates:
 - Architecture approval before delivery if high-risk changes are present
 - Validation pass before final review can complete
 - Final human approval before merge preparation
+- Authorization checks before approval, retry, cancellation, and artifact download actions
+- Idempotency enforcement on all retriable write commands
 
 ## Traceability Expectations
 
@@ -363,6 +384,7 @@ At each stage, the platform should record explicit links:
 - Story -> Task
 - Task -> AgentRun
 - AgentRun -> Artifact
+- AgentRun -> RunEvent
 - AcceptanceCriterion -> TestScenario
 - ValidationReport -> Artifact evidence
 - ReviewDecision -> Story and run stage

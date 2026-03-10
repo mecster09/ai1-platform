@@ -48,9 +48,13 @@ tsconfig.base.json
 |   |   |-- app/
 |   |   |-- components/
 |   |   |-- lib/
+|   |   |   |-- api-client/
+|   |   |   |-- actions/
+|   |   |   `-- telemetry/
 |   |   |-- public/
 |   |   |-- styles/
 |   |   |-- tests/
+|   |   |-- instrumentation.ts
 |   |   |-- next.config.ts
 |   |   `-- package.json
 |   |
@@ -62,6 +66,10 @@ tsconfig.base.json
 |   |   |   |   |-- runs/
 |   |   |   |   |-- reviews/
 |   |   |   |   `-- traceability/
+|   |   |   |-- commands/
+|   |   |   |-- queries/
+|   |   |   |-- streaming/
+|   |   |   |-- artifacts/
 |   |   |   |-- routes/
 |   |   |   |-- services/
 |   |   |   |-- repositories/
@@ -145,7 +153,9 @@ tsconfig.base.json
 |   |   |   |-- code-change-set.ts
 |   |   |   |-- test-scenario.ts
 |   |   |   |-- agent-run-result.ts
-|   |   |   `-- review-decision.ts
+|   |   |   |-- review-decision.ts
+|   |   |   |-- run-event.ts
+|   |   |   `-- artifact-reference.ts
 |   |   `-- package.json
 |   |
 |   |-- schemas/
@@ -184,6 +194,14 @@ tsconfig.base.json
 |   |   |   |-- activities.ts
 |   |   |   |-- signals.ts
 |   |   |   `-- task-queues.ts
+|   |   `-- package.json
+|   |
+|   |-- platform-api-client/
+|   |   |-- src/
+|   |   |   |-- commands/
+|   |   |   |-- queries/
+|   |   |   |-- streaming/
+|   |   |   `-- artifacts/
 |   |   `-- package.json
 |   |
 |   |-- agent-runtime/
@@ -395,10 +413,16 @@ Keep these packages small and deliberate. Do not create many micro-packages earl
 Recommended app ownership:
 
 - `platform-web`: intake UI, review UI, traceability views, logs, artifacts, status timelines
-- `platform-api`: command and query boundary, persistence, approvals, workflow initiation
+- `platform-api`: command, query, streaming, and artifact boundary; persistence; approvals; workflow initiation
 - `workflow-worker`: Temporal worker bootstrap and workflow registration
 - `context-service`: indexing, retrieval, source tracking, ChromaDB query orchestration
 - `workspace-service`: git operations, worktree management, command execution, log capture
+
+Boundary guidance:
+
+- `platform-web` should use shared typed API clients or Server Actions that preserve the public API semantics.
+- `platform-api` should keep command, query, streaming, and artifact concerns explicit in code layout.
+- Streaming support should live under a dedicated module so live run events and log tails do not get mixed into synchronous request handlers.
 
 Recommended agent ownership:
 
