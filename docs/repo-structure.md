@@ -283,6 +283,8 @@ Holds each specialist worker as its own app:
 
 - `tasks-agent-worker`
 - `architect-agent-worker`
+- registered delivery-agent workers
+- current built-in delivery workers:
 - `frontend-agent-worker`
 - `backend-agent-worker`
 - `test-agent-worker`
@@ -310,6 +312,8 @@ Holds the business workflow definitions called out in the plan:
 - `CreateStoryWorkflow`
 - `DecomposeStoryWorkflow`
 - `CreateArchitectureWorkflow`
+- selected delivery workflows for the story
+- current built-in delivery workflows:
 - `ImplementFrontendWorkflow`
 - `ImplementBackendWorkflow`
 - `GenerateE2ETestsWorkflow`
@@ -400,6 +404,7 @@ Recommended agent ownership:
 
 - `tasks-agent-worker`: task decomposition only
 - `architect-agent-worker`: blueprint and machine-readable contracts only
+- delivery agents are selected per story from the task breakdown
 - `frontend-agent-worker`: UI changes only
 - `backend-agent-worker`: API, service, and data-layer changes only
 - `test-agent-worker`: `Playwright` generation and test mapping only
@@ -462,7 +467,7 @@ For MVP 1, the repo can start smaller:
 /scripts
 ```
 
-Add the remaining delivery agents, context-service, and workspace-service structure as MVP 2 and MVP 3 land.
+Add configurable delivery-agent selection, the remaining delivery agents, context-service, and workspace-service structure as MVP 2 and MVP 3 land.
 
 ## Why This Layout Fits The Plan
 

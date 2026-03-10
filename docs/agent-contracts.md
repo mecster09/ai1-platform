@@ -17,6 +17,8 @@ They are aligned with:
 - [temporal-workflows.md](c:/Code/AI1-Platform/docs/temporal-workflows.md)
 - [architecture.md](c:/Code/AI1-Platform/docs/architecture.md)
 
+The platform always runs the tasks and architect agents. Agents are configured in advance in a platform-managed registry and made available to workflows and agent workers. Delivery agents are selected per story from the task breakdown. The current built-in delivery agents are `frontend`, `backend`, and `test-automation`, but future delivery agents can adopt the same shared run contract.
+
 ## Shared Rules
 
 All agents must be:
@@ -35,6 +37,7 @@ Every agent run must receive:
 - `runId`
 - `storyId`
 - `agentType`
+- `availableAgents`
 - `taskIds`
 - `allowedTools`
 - `inputArtifacts`
@@ -54,6 +57,8 @@ Every agent run must return:
 - `confidence`
 - `reviewNotes`
 
+`agentType` should be validated against the platform agent registry rather than a hard-coded assumption that every story uses all delivery agents.
+
 ## Shared Input Envelope
 
 Canonical shape:
@@ -63,6 +68,13 @@ Canonical shape:
   "runId": "RUN-123",
   "storyId": "ST-1024",
   "agentType": "frontend",
+  "availableAgents": [
+    { "agentType": "tasks", "role": "control", "enabled": true },
+    { "agentType": "architect", "role": "control", "enabled": true },
+    { "agentType": "frontend", "role": "delivery", "enabled": true },
+    { "agentType": "backend", "role": "delivery", "enabled": true },
+    { "agentType": "test-automation", "role": "delivery", "enabled": true }
+  ],
   "taskIds": ["FE-1"],
   "allowedTools": ["read-files", "search-code", "write-files", "run-tests"],
   "inputArtifacts": [
@@ -175,6 +187,7 @@ The tasks agent must return a payload shaped like:
       "dependsOn": []
     }
   ],
+  "recommendedAgentTypes": ["frontend", "backend", "test-automation"],
   "dependencies": [
     {
       "taskId": "TA-1",
@@ -201,6 +214,8 @@ The tasks agent must return a payload shaped like:
 - every acceptance criterion is mapped to at least one task
 - tasks are non-overlapping where possible
 - dependencies are explicit
+- required delivery agents are explicit
+- selected delivery agents come from the configured registry
 - unknowns are surfaced, not hidden
 
 ### Forbidden Behavior
@@ -548,6 +563,8 @@ Allowed tool categories by agent:
   - inspect acceptance criteria and outputs
   - write test files
   - run test generation and targeted verification
+
+Only the delivery agents selected for the story should be dispatched. The current platform must support front-end only, back-end only, test-automation only, any pair, or all three without changing the shared run envelope.
 
 ## Policy Constraints
 

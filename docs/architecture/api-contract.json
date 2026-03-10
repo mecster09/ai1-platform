@@ -11,8 +11,10 @@
   "principles": [
     "The platform API is the only public application boundary.",
     "All workflows are started through typed commands.",
+    "Agents are configured in advance and made available to workflows and agents through platform-managed registry data.",
     "Internal agent and workflow coordination is artifact-driven and not exposed directly to the UI.",
-    "All write operations are auditable and return stable identifiers."
+    "All write operations are auditable and return stable identifiers.",
+    "Delivery-agent selection is driven by the task breakdown and may include one, two, or three of the current built-in delivery agents."
   ],
   "resources": {
     "stories": {
@@ -195,9 +197,9 @@
             "agentSelection": {
               "type": "array",
               "items": {
-                "type": "string",
-                "enum": ["frontend", "backend", "test-automation"]
-              }
+                "type": "string"
+              },
+              "description": "Optional override constrained to delivery agents approved by decomposition. If omitted, the platform uses the tasks-agent-recommended selection."
             }
           }
         },
@@ -399,6 +401,10 @@
         "priority": { "type": "string" },
         "narrative": { "type": "string" },
         "constraints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "selectedAgentTypes": {
           "type": "array",
           "items": { "type": "string" }
         },

@@ -1,4 +1,4 @@
-# 05 Agent Runtime And Core Agents
+# 06 Agent Runtime And Core Agents
 
 ## Goal
 
@@ -13,22 +13,24 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 
 ## Tasks
 
-### T-035 Shared Agent Runtime
+### T-038 Shared Agent Runtime
 
 - Outcome: All agents share the same enforcement model.
-- Dependencies: `tasks/01-contracts-and-persistence.md#t-006-typescript-domain-contracts`, `tasks/01-contracts-and-persistence.md#t-007-json-schema-package`, `tasks/01-contracts-and-persistence.md#t-008-runtime-validation-helpers`
+- Dependencies: `tasks/01-contracts-and-persistence.md#t-006-typescript-domain-contracts`, `tasks/01-contracts-and-persistence.md#t-007-json-schema-package`, `tasks/01-contracts-and-persistence.md#t-008-runtime-validation-helpers`, `tasks/02-agent-registry.md#t-012-agent-registry-contracts`
 
 - [ ] Create `@ai1/agent-runtime`
 - [ ] Parse and validate shared run envelopes
+- [ ] Parse and validate `availableAgents`
 - [ ] Enforce policy constraints
 - [ ] Enforce allowed tool use
+- [ ] Enforce agent-type checks against configured registry data
 - [ ] Validate agent outputs against schemas
 - [ ] Standardize blocked and failed responses
 
-### T-036 Shared Tool Adapters
+### T-039 Shared Tool Adapters
 
 - Outcome: Agents can work through consistent controlled tools.
-- Dependencies: `T-035`, `tasks/04-context-and-workspace.md#t-034-safe-command-execution`
+- Dependencies: `T-038`, `tasks/05-context-and-workspace.md#t-037-safe-command-execution`
 
 - [ ] Add file read tools
 - [ ] Add code search tools
@@ -37,22 +39,23 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Add diff inspection tools
 - [ ] Add targeted test execution tools
 
-### T-037 Tasks Agent Worker
+### T-040 Tasks Agent Worker
 
 - Outcome: The tasks agent can generate structured task graphs and ambiguity flags.
-- Dependencies: `T-035`, `tasks/04-context-and-workspace.md#t-030-context-service`
+- Dependencies: `T-038`, `tasks/05-context-and-workspace.md#t-033-context-service`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
 
 - [ ] Scaffold `agents/tasks-agent-worker`
 - [ ] Enforce strict tasks-agent input contract
 - [ ] Implement story decomposition logic
-- [ ] Emit `Task[]`, dependencies, risk flags, and ambiguity flags
+- [ ] Read configured available agents from runtime context
+- [ ] Emit `Task[]`, recommended agent types, dependencies, risk flags, and ambiguity flags
 - [ ] Persist and publish decomposition artifacts
 - [ ] Add worker-level tests
 
-### T-038 Architect Agent Worker
+### T-041 Architect Agent Worker
 
 - Outcome: The platform can produce machine-readable technical blueprints.
-- Dependencies: `T-035`, `tasks/04-context-and-workspace.md#t-030-context-service`
+- Dependencies: `T-038`, `tasks/05-context-and-workspace.md#t-033-context-service`
 
 - [ ] Scaffold `agents/architect-agent-worker`
 - [ ] Enforce strict architect-agent input contract
@@ -63,10 +66,10 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Flag approval-required changes
 - [ ] Add worker-level tests
 
-### T-039 Approval Integration
+### T-042 Approval Integration
 
 - Outcome: Human approval is part of the system, not an informal side channel.
-- Dependencies: `tasks/02-platform-api-and-web.md#t-013-public-api-surface`, `tasks/02-platform-api-and-web.md#t-016-platform-web-skeleton`, `tasks/03-workflows.md#t-020-workflow-worker-bootstrap`
+- Dependencies: `tasks/03-platform-api-and-web.md#t-016-public-api-surface`, `tasks/03-platform-api-and-web.md#t-019-platform-web-skeleton`, `tasks/04-workflows.md#t-023-workflow-worker-bootstrap`
 
 - [ ] Connect review creation to `platform-api`
 - [ ] Connect review states to `platform-web`

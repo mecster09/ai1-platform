@@ -23,6 +23,8 @@ The orchestrator owns these core workflows:
 - `CreateStoryWorkflow`
 - `DecomposeStoryWorkflow`
 - `CreateArchitectureWorkflow`
+- selected delivery workflows for the story
+- current built-in delivery workflows:
 - `ImplementFrontendWorkflow`
 - `ImplementBackendWorkflow`
 - `GenerateE2ETestsWorkflow`
@@ -43,6 +45,7 @@ The parent workflow is recommended even though the plan lists the stage workflow
 - Human approval always uses signals, never polling loops
 - Retries are automatic for transient failures and explicit for policy or validation failures
 - Every workflow and activity must carry `storyId`, `runId`, and stage metadata
+- Workflows must have access to the configured agent registry so dispatch is constrained to enabled agents
 
 ## Task Queues
 
@@ -129,6 +132,7 @@ Inputs:
 - story creation command payload
 - uploaded artifact references
 - optional target repo or module scope
+- configured agent registry reference
 
 Outputs:
 
@@ -142,10 +146,11 @@ High-level flow:
 1. Start `CreateStoryWorkflow`
 2. Start `DecomposeStoryWorkflow`
 3. If decomposition succeeds, start `CreateArchitectureWorkflow`
-4. If architecture is approved, run delivery stage workflows in parallel:
-   - `ImplementFrontendWorkflow`
-   - `ImplementBackendWorkflow`
-   - `GenerateE2ETestsWorkflow`
+4. If architecture is approved, run only the delivery stage workflows selected from decomposition:
+   - `ImplementFrontendWorkflow` when front-end work is required
+   - `ImplementBackendWorkflow` when back-end work is required
+   - `GenerateE2ETestsWorkflow` when test automation is required
+   - only if that agent type is enabled in the configured registry
 5. Fan in results
 6. Start `ValidateDeliveryWorkflow`
 7. If validation passes, start `ReviewAndMergeWorkflow`
@@ -232,10 +237,15 @@ Activities:
 Expected outputs:
 
 - `Task[]`
+- recommended delivery-agent selection
 - dependency graph
 - definition of done
 - risk flags
 - ambiguity flags
+
+Selection rule:
+
+- the tasks agent may only recommend delivery agents that are enabled in the configured registry supplied to the workflow
 
 Decision logic:
 
@@ -323,7 +333,7 @@ Retry policy:
 
 Purpose:
 
-- Execute front-end implementation work against approved architecture
+- Execute front-end implementation work against approved architecture when selected by decomposition
 
 Inputs:
 
@@ -358,7 +368,7 @@ Failure behavior:
 
 Purpose:
 
-- Execute back-end implementation work against approved architecture
+- Execute back-end implementation work against approved architecture when selected by decomposition
 
 Inputs:
 
@@ -393,7 +403,7 @@ Failure behavior:
 
 Purpose:
 
-- Generate `Playwright` coverage from approved architecture and acceptance criteria
+- Generate `Playwright` coverage from approved architecture and acceptance criteria when selected by decomposition
 
 Inputs:
 
@@ -531,16 +541,18 @@ Recommended parent-to-child composition inside `DeliverStoryWorkflow`:
 CreateStoryWorkflow
 -> DecomposeStoryWorkflow
 -> CreateArchitectureWorkflow
--> [ImplementFrontendWorkflow, ImplementBackendWorkflow, GenerateE2ETestsWorkflow] in parallel
+-> [selected delivery workflows] in parallel
 -> ValidateDeliveryWorkflow
 -> ReviewAndMergeWorkflow
 ```
 
 Fan-out rules:
 
+- only selected delivery workflows are started
+- initial supported selections are frontend only, backend only, test-automation only, any pair, or all three
 - front-end and back-end can run in parallel after architecture approval
 - test generation can run in parallel once approved contracts exist
-- delivery fan-in waits for all required child workflows
+- delivery fan-in waits for all selected child workflows
 
 ## State Mapping
 

@@ -1,8 +1,8 @@
-# 06 Delivery Agents
+# 07 Delivery Agents
 
 ## Goal
 
-Build the front-end, back-end, and test-automation agents with strict contracts and workspace integration.
+Build the current built-in delivery agents with strict contracts and workspace integration.
 
 ## Target Stack
 
@@ -14,39 +14,42 @@ Build the front-end, back-end, and test-automation agents with strict contracts 
 
 ## Tasks
 
-### T-040 Front-End Agent Worker
+### T-043 Front-End Agent Worker
 
 - Outcome: The platform can generate traceable Next.js code changes from approved architecture.
-- Dependencies: `tasks/05-agent-runtime-and-core-agents.md#t-035-shared-agent-runtime`, `tasks/04-context-and-workspace.md#t-032-workspace-service`, `tasks/05-agent-runtime-and-core-agents.md#t-036-shared-tool-adapters`
+- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
 
 - [ ] Scaffold `agents/frontend-agent-worker`
 - [ ] Enforce approved blueprint and contract requirements
+- [ ] Verify run is permitted by selected and enabled agent types
 - [ ] Restrict writes to approved front-end paths
 - [ ] Generate patch artifacts
 - [ ] Detect and emit contract mismatches
 - [ ] Generate component or integration tests where relevant
 - [ ] Add worker-level tests
 
-### T-041 Back-End Agent Worker
+### T-044 Back-End Agent Worker
 
 - Outcome: The platform can generate traceable backend changes from approved architecture.
-- Dependencies: `tasks/05-agent-runtime-and-core-agents.md#t-035-shared-agent-runtime`, `tasks/04-context-and-workspace.md#t-032-workspace-service`, `tasks/05-agent-runtime-and-core-agents.md#t-036-shared-tool-adapters`
+- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
 
 - [ ] Scaffold `agents/backend-agent-worker`
 - [ ] Enforce approved blueprint and contract requirements
+- [ ] Verify run is permitted by selected and enabled agent types
 - [ ] Restrict schema changes to approved cases
 - [ ] Generate patch artifacts
 - [ ] Generate tests and stubs where relevant
 - [ ] Update API contract artifacts where required
 - [ ] Add worker-level tests
 
-### T-042 Test-Automation Agent Worker
+### T-045 Test-Automation Agent Worker
 
 - Outcome: Acceptance criteria can be converted into executable end-to-end coverage.
-- Dependencies: `tasks/05-agent-runtime-and-core-agents.md#t-035-shared-agent-runtime`, `tasks/04-context-and-workspace.md#t-032-workspace-service`, `tasks/05-agent-runtime-and-core-agents.md#t-036-shared-tool-adapters`
+- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
 
 - [ ] Scaffold `agents/test-agent-worker`
 - [ ] Enforce acceptance-criteria and blueprint input requirements
+- [ ] Verify run is permitted by selected and enabled agent types
 - [ ] Generate `TestScenario[]`
 - [ ] Generate Playwright specs, fixtures, and helpers
 - [ ] Generate acceptance-criteria coverage mapping

@@ -58,13 +58,28 @@ All agents should operate on the same structured objects, not loose prompts.
 
 ### 3. Specialist Agent Layer
 
-These are the five specialist agents:
+The platform always includes two control agents:
 
 - Tasks agent
 - Architect agent
+
+The initial delivery-agent registry includes:
+
 - Front-end agent
 - Back-end agent
 - Test-automation agent
+
+Agents should be configured in advance in a platform-managed agent registry and made available to workflows and agent workers as part of runtime context.
+
+Delivery-agent selection is story-specific. The tasks agent determines which delivery agents are required from the task breakdown, so a story may run:
+
+- Front-end only
+- Back-end only
+- Test-automation only
+- Any combination of two of the above
+- All three
+
+Future delivery agents can be added later without changing the control-plane model.
 
 Each agent should be:
 
@@ -91,6 +106,8 @@ Outputs:
 
 - Normalized story record
 - Task breakdown by area
+- Recommended delivery-agent selection
+- Selection constrained to agents available in the configured registry
 - Dependencies
 - Definition of done
 - Predicted impacted files and modules
@@ -218,7 +235,7 @@ Use a workflow-and-contract model instead:
 1. Story submitted
 2. Tasks agent produces a structured breakdown
 3. Architect agent produces the blueprint
-4. Front-end, back-end, and test agents execute in parallel where possible
+4. Only the delivery agents selected by the tasks breakdown execute, in parallel where possible
 5. Validation and review gates run
 6. Human approves or requests revisions
 7. Merge or package the output
@@ -267,9 +284,9 @@ Architect agent:
 
 Run in parallel where possible:
 
-- Front-end agent implements UI changes
-- Back-end agent implements server and API changes
-- Test agent prepares end-to-end automation
+- Dispatch only the selected delivery agents for the story
+- Current built-in options are front-end, back-end, and test-automation
+- Valid initial configurations include one agent, any pair, or all three
 
 ### Phase E: Validation
 
@@ -334,16 +351,17 @@ Example task output:
 ```json
 {
   "storyId": "ST-1024",
+  "recommendedAgentTypes": ["frontend", "backend", "test-automation"],
   "tasks": [
     {
       "id": "FE-1",
-      "agentType": "front-end",
+      "agentType": "frontend",
       "title": "Add forgot password form",
       "dependsOn": []
     },
     {
       "id": "BE-1",
-      "agentType": "back-end",
+      "agentType": "backend",
       "title": "Create password reset request endpoint",
       "dependsOn": []
     },
@@ -379,6 +397,7 @@ A `Node.js` service that:
 - Receives platform commands
 - Starts `Temporal` workflows
 - Coordinates agent runs
+- Loads the configured agent registry into workflow context
 - Writes state transitions
 
 ### 3. Agent Runner Services
@@ -387,6 +406,8 @@ Separate local services or workers:
 
 - `tasks-agent-worker`
 - `architect-agent-worker`
+- delivery-agent workers selected per story
+- initial delivery workers:
 - `frontend-agent-worker`
 - `backend-agent-worker`
 - `test-agent-worker`
@@ -394,6 +415,7 @@ Separate local services or workers:
 Each worker:
 
 - Receives a typed work item
+- Receives the configured agent registry or relevant filtered view of it
 - Loads only relevant context
 - Executes tools
 - Writes structured outputs
@@ -412,7 +434,7 @@ Responsibilities:
 Use isolated work directories per run:
 
 ```text
-/workspaces/{storyId}/{agentType}/
+/workspaces/{storyId}/{runId}/{agentType}/
 ```
 
 ### 5. Context Service
@@ -503,6 +525,7 @@ Goal:
 
 Add:
 
+- Configurable delivery-agent selection from the tasks breakdown
 - Front-end agent
 - Back-end agent
 - File patch generation
@@ -583,6 +606,8 @@ Core workflows:
 - `CreateStoryWorkflow`
 - `DecomposeStoryWorkflow`
 - `CreateArchitectureWorkflow`
+- selected delivery workflows for the story
+- current built-in delivery workflows:
 - `ImplementFrontendWorkflow`
 - `ImplementBackendWorkflow`
 - `GenerateE2ETestsWorkflow`
@@ -603,7 +628,7 @@ Core workflows:
 - Contracts are explicit
 - Data and API impacts are clear
 
-### Front-end and Back-end Agents
+### Delivery Agents Present For The Story
 
 - Code compiles
 - Changes adhere to the existing architecture

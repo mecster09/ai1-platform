@@ -30,6 +30,8 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Implement TypeScript types for `TestScenario`
 - [ ] Implement TypeScript types for `AgentRunResult`
 - [ ] Implement TypeScript types for `ReviewDecision`
+- [ ] Add contract support for `selectedAgentTypes`
+- [ ] Add contract support for registry-backed `agentType` values
 
 ### T-007 JSON Schema Package
 
@@ -82,6 +84,7 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Create migrations for `trace_links`
 - [ ] Create migrations for `workspace_runs`
 - [ ] Create migrations for `context_documents`
+- [ ] Add storage for story-level selected agent types
 
 ### T-011 Repository Modules
 
@@ -96,4 +99,5 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Implement reviews repository
 - [ ] Implement validation repository
 - [ ] Implement traceability repository
+- [ ] Support story reads and writes for selected agent types
 - [ ] Add repository-level tests

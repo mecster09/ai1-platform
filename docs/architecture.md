@@ -30,7 +30,7 @@ At runtime, the platform behaves as a workflow system with controlled fan-out:
 3. A workflow is started in Temporal.
 4. The tasks agent decomposes the story.
 5. The architect agent produces the architecture blueprint and contracts.
-6. Front-end, back-end, and test agents execute in parallel where dependencies allow.
+6. The tasks breakdown selects from the preconfigured agent registry, and the chosen delivery agents execute in parallel where dependencies allow.
 7. Validation gates run against generated artifacts and code changes.
 8. A human reviews and approves or requests revision.
 9. The platform prepares a mergeable output bundle.
@@ -81,7 +81,7 @@ The system is intentionally conservative in its dependency footprint.
                               v                               v                               v
                     +---------+---------+           +---------+---------+           +---------+---------+
                     | Tasks Agent       |           | Architect Agent  |           | Delivery Agents    |
-                    | Worker            |           | Worker           |           | FE / BE / Test     |
+                    | Worker            |           | Worker           |           | Selected per story |
                     +---------+---------+           +---------+---------+           +---------+---------+
                               |                               |                               |
                               +---------------+---------------+-------------------------------+
@@ -162,6 +162,7 @@ It manages:
 - Fan-out and fan-in coordination
 - Idempotent replays
 - Auditability of state transitions
+- Access to the configured agent registry for dispatch decisions
 
 Temporal workflows should encode the business process, not tool-specific logic. Agent-specific behavior belongs inside activities or worker services.
 
@@ -305,10 +306,14 @@ Expected artifact classes:
 
 This layer contains workers with narrow responsibilities and tightly controlled I/O.
 
+Agents are configured in advance in a platform-managed registry. Workflows and agent workers receive that registry, or an appropriately scoped view of it, as runtime context so planning and dispatch are constrained to available capabilities.
+
 Workers:
 
 - `tasks-agent-worker`
 - `architect-agent-worker`
+- registered delivery-agent workers
+- current built-in delivery workers:
 - `frontend-agent-worker`
 - `backend-agent-worker`
 - `test-agent-worker`
@@ -442,6 +447,8 @@ The platform should model business flow as distinct but composable Temporal work
 - `CreateStoryWorkflow`
 - `DecomposeStoryWorkflow`
 - `CreateArchitectureWorkflow`
+- selected delivery workflows for the story
+- current built-in delivery workflows:
 - `ImplementFrontendWorkflow`
 - `ImplementBackendWorkflow`
 - `GenerateE2ETestsWorkflow`
@@ -487,6 +494,7 @@ Performed by:
 Processing:
 
 - Retrieve scoped repo context and standards
+- Read the configured agent registry and available agent capabilities
 - Analyze story and constraints
 - Create a normalized task graph
 - Flag ambiguity, blockers, and dependencies
@@ -497,6 +505,7 @@ Outputs:
 - `DefinitionOfDone`
 - `ImpactPrediction`
 - `TaskDecompositionResult`
+- Selected delivery-agent set constrained to configured availability
 
 Gate:
 
@@ -531,9 +540,8 @@ Gate:
 
 Performed by:
 
-- `frontend-agent-worker`
-- `backend-agent-worker`
-- `test-agent-worker`
+- one or more selected delivery-agent workers
+- current built-in options are `frontend-agent-worker`, `backend-agent-worker`, and `test-agent-worker`
 
 Processing:
 
@@ -544,6 +552,8 @@ Processing:
 
 Parallelism:
 
+- Dispatch only the delivery agents required by the task graph
+- Initial supported configurations are front-end only, back-end only, test-automation only, any pair, or all three
 - Front-end and back-end may run in parallel if contracts are stable
 - Test generation may start once blueprint and at least interface-level outputs are available
 
@@ -611,6 +621,7 @@ Every agent run should receive:
 - Story ID
 - Task IDs
 - Agent type
+- Available-agent registry view
 - Allowed tools
 - Input artifact references
 - Context retrieval scope
@@ -1117,7 +1128,7 @@ Build the stable control plane first:
 
 Add production change generation:
 
-- Front-end and back-end agents
+- Configurable delivery-agent execution with current front-end and back-end agents
 - Patch and diff handling
 - Validation pipeline
 
@@ -1125,7 +1136,7 @@ Add production change generation:
 
 Add coverage and operational maturity:
 
-- Test-automation agent
+- Current test-automation agent
 - Traceability UI
 - Context-service retrieval optimization
 - Replay, observability, and policy checks
@@ -1145,7 +1156,7 @@ Reason:
 
 Reason:
 
-- Better interoperability across agents
+- Better interoperability across selected agents
 - Safer validation and versioning
 - Less hallucinated coordination
 

@@ -109,17 +109,19 @@ Flow:
 
 Once architecture is approved:
 
-1. `Temporal` fans out to:
+1. `Temporal` fans out only to the delivery workflows selected from the task breakdown.
+2. The initial supported delivery configurations are front-end only, back-end only, test-automation only, any pair, or all three.
+3. Current built-in workflow options are:
    - `ImplementFrontendWorkflow`
    - `ImplementBackendWorkflow`
    - `GenerateE2ETestsWorkflow`
-2. For each run, `workspace-service` provisions an isolated workspace:
+4. For each run, `workspace-service` provisions an isolated workspace:
 
 ```text
 /workspaces/{storyId}/{runId}/{agentType}/
 ```
 
-3. `context-service` supplies agent-scoped retrieval results using `SQLite` metadata filters and `ChromaDB` semantic search.
+5. `context-service` supplies agent-scoped retrieval results using `SQLite` metadata filters and `ChromaDB` semantic search.
 
 ### Step 5: Front-End Agent
 
@@ -171,7 +173,7 @@ Once architecture is approved:
 
 ### Step 8: Delivery Fan-In
 
-1. `Temporal` waits for front-end, back-end, and test runs to complete or fail.
+1. `Temporal` waits for the selected delivery runs to complete or fail.
 2. If a required run fails:
    - The workflow can retry the run
    - Or move to a blocked review state if retries are exhausted
@@ -280,9 +282,9 @@ platform-web -> platform-api: Submit review decision
 platform-api -> SQLite: Save review decision
 platform-api -> Temporal: Send review signal
 
-Temporal -> frontend-agent-worker: Start FE run
-Temporal -> backend-agent-worker: Start BE run
-Temporal -> test-agent-worker: Start test generation run
+Temporal -> frontend-agent-worker: Start FE run if selected
+Temporal -> backend-agent-worker: Start BE run if selected
+Temporal -> test-agent-worker: Start test generation run if selected
 
 frontend-agent-worker -> workspace-service: Provision FE workspace
 backend-agent-worker -> workspace-service: Provision BE workspace

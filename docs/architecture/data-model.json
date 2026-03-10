@@ -1,6 +1,11 @@
 {
   "modelVersion": "1.1.0",
   "description": "Canonical data model for the AI1 Platform aligned to the local-first architecture.",
+  "agentRegistry": {
+    "controlAgents": ["tasks", "architect"],
+    "deliveryAgents": ["frontend", "backend", "test-automation"],
+    "note": "Agents are configured in advance and made available to workflows and agent workers. Delivery agents are selected per story from the task breakdown. New delivery-agent types can be registered later."
+  },
   "storageArchitecture": {
     "relationalStore": "SQLite",
     "vectorStore": "ChromaDB",
@@ -42,6 +47,7 @@
         "status": "draft|submitted|decomposed|architecture-pending-approval|in-delivery|validating|in-review|blocked|completed|rejected",
         "constraints": "string[]",
         "affectedModules": "string[]",
+        "selectedAgentTypes": "string[]",
         "createdBy": "string",
         "createdAt": "datetime",
         "updatedAt": "datetime",
@@ -67,7 +73,7 @@
       "fields": {
         "taskId": "string",
         "storyId": "string",
-        "agentType": "tasks|architect|frontend|backend|test-automation",
+        "agentType": "registered-agent-type",
         "title": "string",
         "description": "string",
         "status": "proposed|approved|in-progress|blocked|completed|rejected",
@@ -142,7 +148,7 @@
         "runId": "string",
         "workflowId": "string",
         "storyId": "string",
-        "agentType": "tasks|architect|frontend|backend|test-automation|validation",
+        "agentType": "registered-agent-type",
         "status": "queued|running|blocked|failed|completed|needs-review",
         "workspaceRef": "string|null",
         "branchName": "string|null",
@@ -257,7 +263,7 @@
         "workspaceRunId": "string",
         "runId": "string",
         "storyId": "string",
-        "agentType": "tasks|architect|frontend|backend|test-automation|validation",
+        "agentType": "registered-agent-type",
         "workspacePath": "string",
         "repositoryPath": "string",
         "branchName": "string",
