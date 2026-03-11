@@ -24,6 +24,9 @@ Build the retrieval and execution services that make agent runs scoped, reproduc
 - [ ] Add indexing metadata models
 - [ ] Add ChromaDB collection helpers
 - [ ] Add query and ranking helpers
+- [ ] Define collection strategy for ChromaDB-backed retrieval
+- [ ] Add metadata dimensions for `storyId`, `runId`, `agentType`, `artifactType`, `repo`, `module`, and `schemaVersion`
+- [ ] Encode the rule that ChromaDB returns retrieval candidates only and is never authoritative state
 
 ### T-033 Context Service
 
@@ -36,6 +39,7 @@ Build the retrieval and execution services that make agent runs scoped, reproduc
 - [ ] Add indexing pipeline for coding standards
 - [ ] Add indexing pipeline for API contracts and prior story artifacts
 - [ ] Persist context metadata in SQLite
+- [ ] Define re-index triggers and stale embedding cleanup behavior
 
 ### T-034 Retrieval Interfaces
 
@@ -47,6 +51,7 @@ Build the retrieval and execution services that make agent runs scoped, reproduc
 - [ ] Implement contract-scoped retrieval
 - [ ] Implement historical artifact retrieval
 - [ ] Record retrieval audit trails
+- [ ] Record retrieval provenance per run and per agent execution
 
 ### T-035 Workspace Service
 
@@ -75,7 +80,11 @@ Build the retrieval and execution services that make agent runs scoped, reproduc
 - Dependencies: `T-035`
 
 - [ ] Add targeted command execution
+- [ ] Prefer structured execution semantics over shell-heavy execution
 - [ ] Capture stdout and stderr
 - [ ] Capture exit codes and timing
 - [ ] Enforce timeouts
+- [ ] Enforce working-directory rules per run
+- [ ] Enforce environment propagation rules per command category
+- [ ] Capture command metadata including args, cwd, timeout outcome, and execution category
 - [ ] Store command logs as artifacts

@@ -19,11 +19,18 @@ The platform is designed around three layers:
 The intended local-first stack is:
 
 - `Temporal` for orchestration, retries, and visibility
-- `LangGraph` or a thin custom runner for agent execution
+- `LangGraph` or a thin custom runner for agent execution inside individual agent workers
 - `SQLite` for structured metadata and workflow-linked state
 - `ChromaDB` for local vector retrieval
 - filesystem-based artifact storage
 - `Next.js` for the platform UI
+
+Runtime boundaries:
+
+- `Temporal` is the outer business-process orchestrator for story delivery, approvals, retries, and multi-agent coordination.
+- `LangGraph`, if used, is agent-local only and must not become a second platform-wide workflow engine.
+- `SQLite` is the source of truth for structured state and should run with WAL mode and foreign key enforcement enabled.
+- `ChromaDB` is retrieval infrastructure only; approved artifacts, relational state, and current source remain authoritative.
 
 The agent runtime should support provider-backed LLM access, including:
 
@@ -34,12 +41,18 @@ The agent runtime should support provider-backed LLM access, including:
 The operating model is workflow-and-contract based rather than free-form agent chat:
 
 1. A story is submitted.
-2. The workflow loads the configured agent registry.
+2. `DeliverStoryWorkflow` starts and loads the configured agent registry.
 3. The tasks agent decomposes the story into structured work and recommends delivery agents from the configured set.
 4. The architect agent produces the blueprint and contracts.
 5. Only the selected delivery agents execute where dependencies allow.
 6. Validation and review gates run.
 7. A human approves, rejects, or requests revision.
+
+UI and API boundary rules:
+
+- `platform-web` uses Server Components by default and Client Components only where interactivity requires them.
+- Server Actions may be used for same-origin mutations, but they must preserve the same validation, authorization, audit, and idempotency semantics as the platform API boundary.
+- Live operational views use SSE for one-way server-to-browser streaming with ordered, reconnect-aware events.
 
 The current built-in delivery-agent set is:
 

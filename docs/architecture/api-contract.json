@@ -19,7 +19,9 @@
     "All write operations are auditable and return stable identifiers.",
     "Delivery-agent selection is driven by the task breakdown and may include one, two, or three of the current built-in delivery agents.",
     "Retriable mutations require idempotency keys.",
-    "Live operational views consume streaming endpoints for status and log updates."
+    "Live operational views consume streaming endpoints for status and log updates.",
+    "SSE streaming is server-to-browser only and uses ordered, reconnect-aware event delivery.",
+    "Streaming events use named event types and monotonically increasing sequence identifiers."
   ],
   "authorizationModel": {
     "mode": "role-and-capability",
@@ -361,6 +363,9 @@
         "pathParams": {
           "runId": { "type": "string" }
         },
+        "queryParams": {
+          "afterSequence": { "type": "number" }
+        },
         "responseBodySchema": {
           "$ref": "#/schemas/RunLogEvent"
         }
@@ -676,7 +681,16 @@
         "sequence": { "type": "number" },
         "runId": { "type": "string" },
         "storyId": { "type": "string" },
-        "eventType": { "type": "string" },
+        "eventType": {
+          "type": "string",
+          "enum": [
+            "run.status",
+            "workflow.status",
+            "approval.changed",
+            "validation.progress",
+            "workflow.completed"
+          ]
+        },
         "status": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
         "payload": { "type": "object" }
@@ -687,6 +701,10 @@
       "properties": {
         "sequence": { "type": "number" },
         "runId": { "type": "string" },
+        "eventType": {
+          "type": "string",
+          "enum": ["run.log"]
+        },
         "timestamp": { "type": "string", "format": "date-time" },
         "level": { "type": "string" },
         "message": { "type": "string" }
@@ -744,7 +762,8 @@
         "runId",
         "eventType",
         "timestamp"
-      ]
+      ],
+      "resumeMechanism": "Clients may resume from the last observed sequence using SSE reconnect semantics or explicit afterSequence query parameters."
     }
   }
 }

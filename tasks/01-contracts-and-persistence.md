@@ -37,7 +37,8 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Implement TypeScript types for `ApiSubscription`
 - [ ] Add contract support for `selectedAgentTypes`
 - [ ] Add contract support for registry-backed `agentType` values
-- [ ] Add contract support for `apiBoundaryVersion` and `emittedEvents`
+- [ ] Define canonical contract formats per boundary across TypeScript, JSON Schema, and API artifacts
+- [ ] Decide whether `apiBoundaryVersion` and `emittedEvents` are canonical contract fields; define them in docs and schemas if retained
 - [ ] Add contract support for review version and idempotent mutation metadata
 
 ### T-007 JSON Schema Package
@@ -50,6 +51,7 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Store schemas as versioned `.json` files
 - [ ] Add schema export helpers
 - [ ] Add schemas for run events, artifact metadata, idempotency records, and API-boundary-aware review commands
+- [ ] Add schemas for SSE event envelopes and sequence-based resume parameters where required
 - [ ] Verify schemas load correctly at runtime
 
 ### T-008 Runtime Validation Helpers
@@ -62,6 +64,7 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Add agent input validators
 - [ ] Add agent output validators
 - [ ] Add idempotency-key and review-version validators for public mutation commands
+- [ ] Enforce runtime validation for API, persistence, and artifact boundaries rather than relying on TypeScript types alone
 - [ ] Add reusable validation error formatting
 
 ### T-009 SQLite Access Layer
@@ -73,6 +76,10 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Add SQLite client initialization
 - [ ] Add migration runner
 - [ ] Add transaction helpers
+- [ ] Enable WAL mode during initialization
+- [ ] Enable foreign key enforcement during initialization
+- [ ] Add integrity-check helpers
+- [ ] Add local backup or export baseline
 - [ ] Add basic health and connectivity checks
 
 ### T-010 Initial SQLite Schema
@@ -100,6 +107,7 @@ Create the shared contract layer, schema validation, SQLite persistence, and rep
 - [ ] Add storage for story-level selected agent types
 - [ ] Add storage for artifact metadata including content type, size, and integrity hash
 - [ ] Add storage for review version and optimistic concurrency fields
+- [ ] Add storage support for retrieval provenance and context-document scoping metadata
 
 ### T-011 Repository Modules
 

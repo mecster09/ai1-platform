@@ -62,6 +62,9 @@ Set up the monorepo, shared TypeScript tooling, local infrastructure bootstrap, 
 - [ ] Add environment variable templates
 - [ ] Add provider configuration variables for `AI_PROVIDER`, `AI_MODEL`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `OPENAI_BASE_URL`
 - [ ] Document where `.env` files should live for platform services and agent workers
+- [ ] Define which services and workers consume which environment variables
+- [ ] Define how shared config is loaded across services and workers
+- [ ] Distinguish runtime-only config from repo-defaulted config
 - [ ] Verify infrastructure can be started locally
 
 ### T-005 Runtime State and Git Ignore

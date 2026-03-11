@@ -35,13 +35,20 @@ Implement the configured agent registry that makes enabled agents available to w
 - [ ] Add filtering for enabled versus disabled agents
 - [ ] Verify configured registry data is available to platform services
 
-### T-014 Agent Registry API And Runtime Integration
+### T-014A Agent Registry Runtime Integration
 
-- Outcome: Workflows and agent runs receive the configured registry or an appropriate filtered view.
-- Dependencies: `T-013`, `tasks/03-platform-api-and-web.md#t-015-platform-api-skeleton`, `tasks/04-workflows.md#t-023-workflow-worker-bootstrap`
+- Outcome: Workflow workers and agent runs receive the configured registry or an appropriate filtered view without creating a bootstrap cycle.
+- Dependencies: `T-013`
 
-- [ ] Add platform API support for loading configured agent registry data
 - [ ] Add workflow input support for configured agent registry references
 - [ ] Add workflow-worker integration for passing registry data to activities
 - [ ] Add agent-run envelope population for `availableAgents`
 - [ ] Verify workflows and agents only see configured available agents
+
+### T-014B Agent Registry API Integration
+
+- Outcome: The public API can expose and use configured registry data after the runtime path exists.
+- Dependencies: `T-014A`, `tasks/03-platform-api-and-web.md#t-015-platform-api-skeleton`
+
+- [ ] Add platform API support for loading configured agent registry data
+- [ ] Support registry-backed selection and visibility in API responses where required

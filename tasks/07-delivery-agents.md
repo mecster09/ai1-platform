@@ -17,7 +17,7 @@ Build the current built-in delivery agents with strict contracts and workspace i
 ### T-043 Front-End Agent Worker
 
 - Outcome: The platform can generate traceable Next.js code changes from approved architecture.
-- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Scaffold `agents/frontend-agent-worker`
 - [ ] Enforce approved blueprint and contract requirements
@@ -33,7 +33,7 @@ Build the current built-in delivery agents with strict contracts and workspace i
 ### T-044 Back-End Agent Worker
 
 - Outcome: The platform can generate traceable backend changes from approved architecture.
-- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Scaffold `agents/backend-agent-worker`
 - [ ] Enforce approved blueprint and contract requirements
@@ -48,7 +48,7 @@ Build the current built-in delivery agents with strict contracts and workspace i
 ### T-045 Test-Automation Agent Worker
 
 - Outcome: Acceptance criteria can be converted into executable end-to-end coverage.
-- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `tasks/06-agent-runtime-and-core-agents.md#t-038-shared-agent-runtime`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/06-agent-runtime-and-core-agents.md#t-039-shared-tool-adapters`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Scaffold `agents/test-agent-worker`
 - [ ] Enforce acceptance-criteria and blueprint input requirements
@@ -56,5 +56,7 @@ Build the current built-in delivery agents with strict contracts and workspace i
 - [ ] Generate `TestScenario[]`
 - [ ] Generate Playwright specs, fixtures, and helpers
 - [ ] Generate acceptance-criteria coverage mapping
+- [ ] Generate evidence artifacts and explicit links from acceptance criteria to test evidence
+- [ ] Define trace, screenshot, and report artifact policy for generated test runs
 - [ ] Record blockers and environment assumptions
 - [ ] Add worker-level tests

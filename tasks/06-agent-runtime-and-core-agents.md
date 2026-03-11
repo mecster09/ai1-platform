@@ -26,8 +26,10 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Enforce agent-type checks against configured registry data
 - [ ] Validate agent outputs against schemas
 - [ ] Standardize blocked and failed responses
-- [ ] Validate `apiBoundaryVersion` and `emittedEvents`
-- [ ] Enforce `mustUseApprovedApiBoundary`, `requiresIdempotentMutations`, and `requiresReviewVersionCheck`
+- [ ] Decide per agent whether to use `LangGraph` or a thin custom runner
+- [ ] Ensure `LangGraph`, if used, remains agent-local and does not own story-level orchestration, approval flow, or retries
+- [ ] Define or remove `apiBoundaryVersion` and `emittedEvents` as canonical runtime fields before enforcing them
+- [ ] Define or remove `mustUseApprovedApiBoundary`, `requiresIdempotentMutations`, and `requiresReviewVersionCheck` before enforcing them
 
 ### T-039 Shared Tool Adapters
 
@@ -44,7 +46,7 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 ### T-040 Tasks Agent Worker
 
 - Outcome: The tasks agent can generate structured task graphs and ambiguity flags.
-- Dependencies: `T-038`, `tasks/05-context-and-workspace.md#t-033-context-service`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `T-038`, `tasks/05-context-and-workspace.md#t-033-context-service`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Scaffold `agents/tasks-agent-worker`
 - [ ] Enforce strict tasks-agent input contract
@@ -77,6 +79,7 @@ Build the shared agent runtime plus the first two core agents: tasks and archite
 - [ ] Connect review creation to `platform-api`
 - [ ] Connect review states to `platform-web`
 - [ ] Wire review decisions back to Temporal signals
+- [ ] Use workflow signals for approval input and query or read-model paths for status inspection
 - [ ] Support clarification reviews
 - [ ] Support architecture approvals
 - [ ] Support final review decisions

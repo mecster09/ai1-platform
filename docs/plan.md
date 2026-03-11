@@ -13,7 +13,7 @@ You are building a local software delivery platform with:
 A strong local-first implementation is:
 
 - `Temporal` for durable orchestration, retries, state, and visibility
-- `LangGraph` or a thin custom runner for controlled agent execution
+- `LangGraph` or a thin custom runner for controlled agent execution inside individual agent workers, not as a replacement for platform-level workflow orchestration
 - Local model support through `OpenAI`, `Anthropic`, an OpenAI-compatible endpoint, or equivalent model clients
 
 ## Target Architecture
@@ -27,7 +27,7 @@ This is the local platform that manages all work.
 Core services:
 
 - Workflow orchestrator: `Temporal`
-- Agent execution runtime: `LangGraph` or a thin custom agent runner
+- Agent execution runtime: `LangGraph` or a thin custom agent runner used within agent workers only where graph-based execution is justified
 - Artifact store: filesystem + Git repo + object storage folder
 - Metadata store: `SQLite`
 - Vector and context store: `ChromaDB`
@@ -405,9 +405,11 @@ Implementation rules:
 
 - Use App Router and Server Components by default.
 - Use Client Components only for approval controls, live log viewers, diff interactions, and uploads.
-- Use Server Actions for same-origin form mutations initiated by `platform-web`.
+- Use Server Actions for same-origin form mutations initiated by `platform-web`, while preserving the same validation, authorization, audit, and idempotency rules as the platform boundary.
 - Use Route Handlers only for explicit HTTP needs such as SSE streams, artifact transfer, or external callbacks.
+- Route Handlers are not the default data-access layer for server-rendered pages.
 - Treat run status, logs, approvals, and traceability as dynamic operational views rather than static content.
+- Define per-screen freshness using dynamic rendering, `no-store`, or bounded revalidation rather than relying on defaults.
 
 ### 2. Orchestrator Service
 
@@ -420,6 +422,11 @@ A `Node.js` service that:
 - Loads the configured agent registry into workflow context
 - Writes state transitions
 - Enforces idempotency, authorization, and optimistic concurrency on approval commands
+
+Workflow implementation rules:
+
+- `Temporal` workflows orchestrate business process only.
+- Tool execution, file mutation, repository operations, and network side effects must happen in Activities or worker-side execution code, not in Workflow code.
 
 ### 3. Agent Runner Services
 
@@ -441,6 +448,12 @@ Each worker:
 - Executes tools
 - Writes structured outputs
 
+Runtime boundary rules:
+
+- If `LangGraph` is used, it runs inside the worker as an agent-local execution engine.
+- `Temporal` remains responsible for story-level orchestration, retries, approval waits, and multi-agent coordination.
+- Simpler agents may use a thin custom runner instead of `LangGraph`.
+
 ### 4. Repo Workspace Manager
 
 Responsibilities:
@@ -451,6 +464,12 @@ Responsibilities:
 - Apply diffs
 - Run `npm`, test, and build commands
 - Capture outputs safely
+
+Execution rules:
+
+- Prefer structured command execution semantics over shell-heavy execution.
+- Capture `stdout`, `stderr`, exit code, duration, and working directory for every command.
+- Apply explicit timeout and environment-propagation rules per command category.
 
 Use isolated work directories per run:
 
@@ -470,6 +489,12 @@ Responsible for:
 - Design tokens and component library information
 
 Use scoped retrieval rather than whole-repo dumping.
+
+Retrieval rules:
+
+- `ChromaDB` is a retrieval layer only, not the source of truth for platform state.
+- Retrieval should be constrained by metadata such as story, run, agent type, artifact type, repository, module, and schema version.
+- Record which retrieved documents informed each run.
 
 ## How Agents Should Work
 
@@ -520,6 +545,7 @@ Every run must return:
    Never let multiple agents write directly to the same branch or worktree simultaneously.
 3. Contracts over prose
    Front-end and back-end coordination should happen via `OpenAPI`, JSON Schema, typed interfaces, or event contracts.
+   TypeScript interfaces improve implementation safety but do not replace runtime validation at API, persistence, or artifact boundaries.
 4. Traceability
    Every output should trace back to story ID, task ID, and acceptance criterion ID.
 5. Deterministic validation
@@ -595,7 +621,7 @@ For the stated stack, this is a strong fit:
 - Platform UI: `Next.js` + `TypeScript`
 - API and platform service: `Node.js` + `TypeScript`
 - Workflow orchestration: `Temporal` self-hosted or local
-- Agent runtime: `LangGraph`
+- Agent runtime: `LangGraph` inside agent workers where graph execution is needed, otherwise a thin custom runner
 - DB: `SQLite`
 - Vector search: `ChromaDB`
 - Workspace execution: Docker-based isolated workers
@@ -618,6 +644,13 @@ Do not start with:
 - Event buses
 - Kubernetes
 - Full autonomy
+
+Implementation defaults to establish early:
+
+- `SQLite` should run with WAL mode enabled.
+- `SQLite` should enforce foreign keys.
+- `ChromaDB` should remain non-authoritative and metadata-filtered.
+- SSE streams should include stable event types, event IDs, and reconnect-aware semantics.
 
 ## Practical System Decomposition
 

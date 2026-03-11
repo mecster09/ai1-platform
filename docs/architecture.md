@@ -57,7 +57,7 @@ The system is intentionally conservative in its dependency footprint.
 
 - `Temporal`: workflow orchestration, retries, state progression, visibility
 - `SQLite`: primary local relational data store
-- `ChromaDB`: local vector similarity search on contextual artifacts
+- `ChromaDB`: local vector similarity search on contextual artifacts, used for retrieval rather than authority
 - `Git`: version control and diff generation
 - `Docker`: isolated workspace execution for tool commands
 - Model endpoint: `OpenAI`, `Anthropic`, local model server, or OpenAI-compatible API
@@ -148,8 +148,11 @@ Implementation rules for `Next.js`:
 - Use the App Router with Server Components by default for story, run, review, and traceability pages.
 - Use Client Components only for interactive controls such as approval actions, live log viewers, diff interactions, and upload widgets.
 - Use Server Actions for same-origin UI mutations when the action is initiated from `platform-web` forms or buttons and does not need to be exposed as a general-purpose HTTP contract.
+- Server Actions must preserve the same validation, authorization, audit, and idempotency behavior as the typed platform boundary they sit on top of.
 - Use Route Handlers only for explicit HTTP boundaries such as streaming events, artifact download or upload, webhook-style callbacks, or external tool access.
+- Route Handlers are not the default internal data-access layer for server-rendered pages.
 - Treat run status, logs, approvals, artifacts, and traceability screens as dynamic operational views; they must not rely on static generation.
+- Define freshness per view intentionally using dynamic rendering, `no-store`, or bounded revalidation.
 - Keep browser code away from direct database and workflow clients. Browser-initiated calls go through the typed platform API surface or typed Server Actions backed by that surface.
 - Register framework-level telemetry through `instrumentation.ts` so request tracing and correlation IDs are captured consistently.
 
@@ -199,6 +202,12 @@ It manages:
 
 Temporal workflows should encode the business process, not tool-specific logic. Agent-specific behavior belongs inside activities or worker services.
 
+Hard rule:
+
+- Workflow code must remain deterministic.
+- Tool execution, filesystem mutation, repository mutation, external I/O, and other side effects belong in Activities or worker-side execution code.
+- Approval input should be modeled through workflow signals, with status exposed through queries or read models.
+
 #### Workspace Service
 
 `workspace-service` manages repository access and isolated execution environments.
@@ -213,6 +222,12 @@ Responsibilities:
 - Run build and test commands
 - Capture logs, exit codes, and artifacts
 - Clean up expired workspaces
+
+Execution policy:
+
+- Prefer structured command execution over shell-heavy execution.
+- Capture `stdout`, `stderr`, exit code, duration, and execution context for each command.
+- Enforce timeout, working-directory, and environment-propagation rules per command class.
 
 Workspace isolation is a hard requirement. Multiple agents must not write to the same working directory concurrently.
 
@@ -238,6 +253,12 @@ The retrieval model must be scope-first:
 
 Whole-repo dumping into prompts is explicitly out of scope.
 
+Retrieval rule:
+
+- `ChromaDB` supplies candidate context only.
+- Authoritative state remains in `SQLite`, approved artifacts, and current repository contents.
+- Retrieval should be filtered by explicit metadata dimensions such as story, run, agent type, artifact type, repository, module, and schema version.
+
 #### Metadata and Artifact Stores
 
 The platform separates structured metadata from large artifacts.
@@ -247,6 +268,12 @@ The platform separates structured metadata from large artifacts.
 - Filesystem or object-style local storage stores uploaded files, generated architecture packs, patches, logs, screenshots, and test evidence.
 
 This separation keeps transactional data queryable while allowing large binary and generated assets to remain externalized.
+
+Operational defaults:
+
+- `SQLite` should run with WAL mode enabled for local read/write concurrency.
+- Foreign key enforcement should be enabled explicitly.
+- Large artifacts should remain outside the relational store.
 
 ### Delivery Intelligence Layer
 
@@ -340,6 +367,12 @@ Expected artifact classes:
 This layer contains workers with narrow responsibilities and tightly controlled I/O.
 
 Agents are configured in advance in a platform-managed registry. Workflows and agent workers receive that registry, or an appropriately scoped view of it, as runtime context so planning and dispatch are constrained to available capabilities.
+
+If `LangGraph` is used, it should be confined to agent-local execution inside a worker.
+
+- `Temporal` remains the outer business-process orchestrator.
+- `LangGraph` must not become a second platform-wide workflow engine.
+- Agent workers that do not benefit from graph execution should remain free to use a thin custom runner instead.
 
 Workers:
 
@@ -445,6 +478,13 @@ Each worker should support:
 - Explicit assumption logging
 - Structured blockers
 - Confidence reporting
+
+Implementation boundary:
+
+- Choose and document one of these models before implementation proceeds:
+  - agent workers are Temporal Activity workers directly
+  - agent workers are external execution services invoked by Activities
+- Do not allow this boundary to remain implicit.
 
 #### `workspace-service`
 
@@ -822,6 +862,7 @@ Recommended design approach:
 - Store artifact references instead of large blobs
 - Version schema-bearing entities
 - Keep the initial deployment single-node and local-first; defer remote database complexity until multi-user or remote execution is needed
+- Enable WAL mode and foreign key enforcement explicitly
 
 #### Vector Store
 
@@ -835,6 +876,14 @@ Recommended design approach:
 - Repository documentation
 
 This store supports retrieval, not authority. The authority remains the structured relational model in `SQLite` and the approved artifacts on disk.
+
+`ChromaDB` implementation must additionally define:
+
+- collection strategy
+- chunking strategy
+- embedding model selection
+- re-index triggers
+- stale artifact cleanup behavior
 
 #### Artifact Storage
 
@@ -996,6 +1045,13 @@ Operational views need a live transport for:
 
 Server-Sent Events is the preferred MVP transport for local-first deployments. Polling may remain available as a fallback, but the architecture should treat streaming as the primary experience for live run views.
 
+Streaming rules:
+
+- SSE is server-to-browser only.
+- Use named event types for distinct operational concerns.
+- Include event IDs so reconnecting clients can resume safely.
+- Send heartbeat comments or equivalent keep-alive behavior for long-lived streams.
+
 #### Artifact API Requirements
 
 Artifact endpoints must support:
@@ -1022,6 +1078,7 @@ Even in a local-first deployment, the API must enforce action-level policy.
 - Internal contracts should version independently.
 - Every mutation capable of being retried by the UI, workflow engine, or network stack must accept an idempotency key.
 - Streaming events should include monotonically increasing sequence numbers so reconnecting clients can resume safely.
+- TypeScript types support implementation safety but do not replace runtime contract validation.
 
 Example command set:
 
@@ -1301,7 +1358,7 @@ Reason:
 
 - Should the platform API own all read-model projections, or should a separate query service be introduced later?
 - How much of the context service should be synchronous retrieval versus precomputed artifact bundles?
-- Which contract format should be canonical first: JSON Schema, OpenAPI, or typed TypeScript interfaces?
+- Which contract format should be canonical first at each boundary: JSON Schema, OpenAPI, or typed TypeScript interfaces?
 - Should test automation run only after implementation completion, or partially in parallel with stubs?
 - What retention policy should apply to old workspaces and large evidence artifacts?
 

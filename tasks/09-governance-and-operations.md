@@ -27,6 +27,7 @@ Add policy enforcement, observability, replay support, and cleanup so the platfo
 - [ ] Implement checks for non-idempotent write routes and undocumented mutation semantics
 - [ ] Implement checks for undocumented streaming endpoints or ad hoc polling paths
 - [ ] Implement checks for missing review-version enforcement on approval commands
+- [ ] Implement checks for missing retrieval provenance and undocumented retrieval scopes
 - [ ] Integrate policy checks into validation workflow
 
 ### T-051 Observability
@@ -39,6 +40,7 @@ Add policy enforcement, observability, replay support, and cleanup so the platfo
 - [ ] Add Temporal search attributes
 - [ ] Add run-level telemetry and metrics
 - [ ] Add telemetry for streaming connections, published run events, and review command failures
+- [ ] Add telemetry for retrieval source counts, retrieval scope filters, and SSE reconnect behavior
 - [ ] Add Next.js framework instrumentation via `instrumentation.ts`
 - [ ] Verify logs support end-to-end debugging
 

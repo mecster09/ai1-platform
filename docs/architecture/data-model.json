@@ -8,7 +8,10 @@
   },
   "storageArchitecture": {
     "relationalStore": "SQLite",
+    "relationalStoreMode": "wal",
+    "relationalConstraints": "foreign-keys-enforced",
     "vectorStore": "ChromaDB",
+    "vectorStoreRole": "retrieval-only",
     "artifactStore": "filesystem"
   },
   "entities": {
@@ -192,7 +195,7 @@
         "runId": "string",
         "storyId": "string",
         "sequence": "number",
-        "eventType": "run-status|workflow-status|log|approval-state|validation-progress",
+        "eventType": "run.status|workflow.status|run.log|approval.changed|validation.progress|workflow.completed",
         "status": "string|null",
         "payload": "json",
         "createdAt": "datetime"
@@ -294,8 +297,16 @@
         "documentType": "repo-doc|architecture|coding-standard|prior-story|api-contract|design-system",
         "sourcePath": "string",
         "scope": "global|product|repo|module|story",
+        "repo": "string|null",
+        "module": "string|null",
+        "storyId": "string|null",
+        "runId": "string|null",
+        "agentType": "registered-agent-type|null",
+        "artifactType": "string|null",
+        "schemaVersion": "string|null",
         "embeddingRef": "string|null",
         "vectorCollection": "string|null",
+        "authority": "advisory-only",
         "checksum": "string",
         "createdAt": "datetime",
         "updatedAt": "datetime"
@@ -322,7 +333,7 @@
         "subscriptionId": "string",
         "storyId": "string|null",
         "runId": "string|null",
-        "channel": "run-events|run-logs|review-events",
+        "channel": "run-events|run-logs|approval-events|validation-events",
         "lastDeliveredSequence": "number|null",
         "createdAt": "datetime",
         "updatedAt": "datetime"

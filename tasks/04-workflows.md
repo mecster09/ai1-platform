@@ -25,12 +25,13 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Add signal types
 - [ ] Add task queue constants
 - [ ] Add workflow ID helpers
+- [ ] Define workflow ID strategy and reuse-policy helpers
 - [ ] Add types for run events, idempotency validation inputs, and review version checks
 
 ### T-023 Workflow Worker Bootstrap
 
 - Outcome: Temporal workers can execute workflows and activities locally.
-- Dependencies: `tasks/00-foundation.md#t-004-local-infrastructure-bootstrap`, `T-022`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `tasks/00-foundation.md#t-004-local-infrastructure-bootstrap`, `T-022`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Scaffold `apps/workflow-worker`
 - [ ] Connect to Temporal
@@ -38,6 +39,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Register workflow definitions
 - [ ] Register activity implementations
 - [ ] Load configured agent registry for workflow execution
+- [ ] Choose and document whether agent workers are Temporal Activity workers directly or adjacent execution services invoked by Activities
 - [ ] Add common worker logging and correlation IDs
 
 ### T-024 Shared Activities
@@ -60,6 +62,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - [ ] Implement `PersistValidationReport`
 - [ ] Implement `AssembleReviewPackage`
 - [ ] Implement configured agent registry lookup for workflows
+- [ ] Publish named SSE-friendly event types with ordered sequence IDs
 
 ### T-025 Create Story Workflow
 
@@ -67,7 +70,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - Dependencies: `T-024`, `tasks/03-platform-api-and-web.md#t-017-story-intake-api`
 
 - [ ] Implement `CreateStoryWorkflow`
-- [ ] Wire it to story intake API
+- [ ] Keep `CreateStoryWorkflow` as an internal child workflow under story delivery orchestration
 - [ ] Persist audit entries and status transitions
 - [ ] Verify idempotent replay behavior
 - [ ] Verify public command idempotency is preserved through workflow-triggered persistence
@@ -75,7 +78,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 ### T-026 Decompose Story Workflow
 
 - Outcome: The first real agent-driven stage is durably orchestrated.
-- Dependencies: `T-024`, `tasks/05-context-and-workspace.md#t-033-context-service`, `tasks/06-agent-runtime-and-core-agents.md#t-040-tasks-agent-worker`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `T-024`, `tasks/05-context-and-workspace.md#t-033-context-service`, `tasks/06-agent-runtime-and-core-agents.md#t-040-tasks-agent-worker`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Implement `DecomposeStoryWorkflow`
 - [ ] Add clarification decision branch
@@ -100,7 +103,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 ### T-028 Delivery Workflows
 
 - Outcome: Delivery-stage workflows can dispatch only the selected implementation agents.
-- Dependencies: `T-024`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/05-context-and-workspace.md#t-036-workspace-isolation`, `tasks/05-context-and-workspace.md#t-037-safe-command-execution`, `tasks/07-delivery-agents.md#t-043-front-end-agent-worker`, `tasks/07-delivery-agents.md#t-044-back-end-agent-worker`, `tasks/07-delivery-agents.md#t-045-test-automation-agent-worker`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `T-024`, `tasks/05-context-and-workspace.md#t-035-workspace-service`, `tasks/05-context-and-workspace.md#t-036-workspace-isolation`, `tasks/05-context-and-workspace.md#t-037-safe-command-execution`, `tasks/07-delivery-agents.md#t-043-front-end-agent-worker`, `tasks/07-delivery-agents.md#t-044-back-end-agent-worker`, `tasks/07-delivery-agents.md#t-045-test-automation-agent-worker`, `tasks/02-agent-registry.md#t-014a-agent-registry-runtime-integration`
 
 - [ ] Implement `ImplementFrontendWorkflow`
 - [ ] Implement `ImplementBackendWorkflow`
@@ -142,6 +145,7 @@ Implement Temporal workers, shared activities, and the core workflow set that or
 - Dependencies: `T-025`, `T-026`, `T-027`, `T-028`, `T-029`, `T-030`
 
 - [ ] Implement `DeliverStoryWorkflow`
+- [ ] Wire story intake API to start `DeliverStoryWorkflow`
 - [ ] Compose stage workflows in sequence
 - [ ] Compose only selected delivery workflows in parallel
 - [ ] Handle blocked and rejected terminal states

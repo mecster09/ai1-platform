@@ -26,6 +26,8 @@ Make runs, approvals, artifacts, validation, and traceability visible and action
 - [ ] Build UI for run summaries and timelines
 - [ ] Build UI for run logs and outputs
 - [ ] Use live streaming for operational views with polling only as fallback
+- [ ] Resume SSE views from the last observed sequence after reconnect
+- [ ] Reconcile UI state after missed event windows or reconnects
 
 ### T-047 Approval UX
 
@@ -48,6 +50,7 @@ Make runs, approvals, artifacts, validation, and traceability visible and action
 - [ ] Persist selected agent set links for story and run views
 - [ ] Add API support for traceability queries
 - [ ] Build traceability matrix UI
+- [ ] Verify acceptance criterion to test evidence navigation paths
 - [ ] Verify backward and forward traceability paths
 
 ### T-049 Diff And Artifact Review

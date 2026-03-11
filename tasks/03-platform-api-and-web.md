@@ -30,7 +30,7 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 ### T-016 Public API Surface
 
 - Outcome: `platform-api` exposes the planned command, query, streaming, and artifact boundary.
-- Dependencies: `T-015`, `tasks/01-contracts-and-persistence.md#t-008-runtime-validation-helpers`, `tasks/01-contracts-and-persistence.md#t-011-repository-modules`, `tasks/02-agent-registry.md#t-014-agent-registry-api-and-runtime-integration`
+- Dependencies: `T-015`, `tasks/01-contracts-and-persistence.md#t-008-runtime-validation-helpers`, `tasks/01-contracts-and-persistence.md#t-011-repository-modules`, `tasks/02-agent-registry.md#t-014b-agent-registry-api-integration`
 
 - [ ] Implement stories resource routes
 - [ ] Implement artifact routes
@@ -43,6 +43,9 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Support registry-backed delivery selection in workflow start routes
 - [ ] Enforce idempotency keys on retriable write routes
 - [ ] Enforce review version checks on approve and revision-request routes
+- [ ] Implement named SSE event types and ordered sequence IDs
+- [ ] Implement `afterSequence` support for reconnecting SSE consumers
+- [ ] Implement heartbeat or keep-alive behavior for long-lived SSE streams
 - [ ] Validate routes against [api-contract.json](c:/Code/AI1-Platform/docs/architecture/api-contract.json)
 
 ### T-017 Story Intake API
@@ -81,8 +84,10 @@ Build the initial `platform-api` and `platform-web` so stories can be created, s
 - [ ] Scaffold `apps/platform-web` in Next.js + TypeScript
 - [ ] Add app shell and routing
 - [ ] Add shared API client layer
-- [ ] Add Server Action support for same-origin UI mutations
+- [ ] Add Server Action support for same-origin UI mutations without bypassing platform validation, authorization, audit, or idempotency semantics
 - [ ] Add SSE client support for live run and log views
+- [ ] Add SSE resume support from last observed sequence
+- [ ] Add client handling for named event types and log-event separation
 - [ ] Add loading and error states
 - [ ] Add root layout and navigation
 - [ ] Add `instrumentation.ts`

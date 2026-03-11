@@ -316,9 +316,9 @@ Holds shared code that multiple services depend on:
 - Domain contracts
 - JSON schemas
 - SQLite access and migrations
-- ChromaDB retrieval support
+- ChromaDB retrieval support with metadata-filtered, non-authoritative context lookup
 - Workflow command and signal types
-- Agent runtime abstractions
+- Agent runtime abstractions, including optional `LangGraph` support inside agent workers or a thin custom runner
 - Logging and configuration
 
 This is the main boundary that prevents copy-paste logic across platform services and agents.
@@ -423,6 +423,8 @@ Boundary guidance:
 - `platform-web` should use shared typed API clients or Server Actions that preserve the public API semantics.
 - `platform-api` should keep command, query, streaming, and artifact concerns explicit in code layout.
 - Streaming support should live under a dedicated module so live run events and log tails do not get mixed into synchronous request handlers.
+- `@ai1/agent-runtime` should not become a second platform-wide orchestrator; any `LangGraph` usage belongs inside agent workers only.
+- `@ai1/context-model` should preserve the rule that `ChromaDB` provides retrieval candidates only and does not replace authoritative state in `SQLite`, artifacts, or source.
 
 Recommended agent ownership:
 

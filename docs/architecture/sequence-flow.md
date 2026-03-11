@@ -17,6 +17,7 @@ API boundary rules for this flow:
 - Browser-originated interactions use the public `platform-api` boundary.
 - `platform-web` may use `Next.js` Server Components and Server Actions, but those entry points still route through the same command, query, streaming, and artifact contracts.
 - Live run views use streaming endpoints for status and logs; polling is fallback behavior only.
+- SSE streams are server-to-browser only and should use named event types with ordered resume semantics.
 - Every retriable mutation carries an idempotency key.
 
 ## Primary Flow
@@ -28,8 +29,8 @@ API boundary rules for this flow:
 3. `platform-api` validates the payload and authorization context.
 4. `platform-api` persists the `Story` and `AcceptanceCriterion` records in `SQLite`.
 5. `platform-api` stores uploaded attachments as artifacts on the local filesystem and stores metadata in `SQLite`.
-6. `platform-api` records the idempotency key and starts `CreateStoryWorkflow` and `DecomposeStoryWorkflow` in `Temporal`.
-7. `Temporal` records the workflow start and queues the decomposition activity.
+6. `platform-api` records the idempotency key and starts `DeliverStoryWorkflow` in `Temporal`.
+7. `DeliverStoryWorkflow` starts `CreateStoryWorkflow` and then `DecomposeStoryWorkflow` as the first two orchestrated stages.
 
 ## Decomposition Flow
 
@@ -37,7 +38,7 @@ API boundary rules for this flow:
 
 1. `tasks-agent-worker` receives a typed `AgentWorkItem` from `Temporal`.
 2. The worker requests scoped repository and standards context from `context-service`.
-3. `context-service` resolves document metadata from `SQLite` and semantic retrieval candidates from `ChromaDB`.
+3. `context-service` resolves document metadata from `SQLite` and candidate retrieval documents from `ChromaDB` using metadata filters and semantic similarity.
 4. The worker requests a workspace from `workspace-service` if repo inspection is required.
 5. The worker analyzes:
    - Story narrative
@@ -129,7 +130,7 @@ Once architecture is approved:
 /workspaces/{storyId}/{runId}/{agentType}/
 ```
 
-5. `context-service` supplies agent-scoped retrieval results using `SQLite` metadata filters and `ChromaDB` semantic search.
+5. `context-service` supplies agent-scoped retrieval results using `SQLite` metadata filters and `ChromaDB` candidate search. Retrieved context is advisory only; authority remains in approved artifacts, relational state, and current source.
 6. `platform-api` begins publishing run lifecycle events and log streams for subscribed UI clients.
 
 ### Step 5: Front-End Agent
@@ -271,7 +272,8 @@ platform-web -> platform-api: Submit story payload + Idempotency-Key
 platform-api -> SQLite: Save story + acceptance criteria
 platform-api -> Artifact Store: Save attachments
 platform-api -> SQLite: Save idempotency record
-platform-api -> Temporal: Start CreateStoryWorkflow / DecomposeStoryWorkflow
+platform-api -> Temporal: Start DeliverStoryWorkflow
+Temporal -> Temporal: Run CreateStoryWorkflow then DecomposeStoryWorkflow
 
 Temporal -> tasks-agent-worker: Execute decomposition
 tasks-agent-worker -> context-service: Fetch scoped context
@@ -301,8 +303,8 @@ platform-api -> Temporal: Send review signal
 Temporal -> frontend-agent-worker: Start FE run if selected
 Temporal -> backend-agent-worker: Start BE run if selected
 Temporal -> test-agent-worker: Start test generation run if selected
-platform-api -> platform-web: Stream run events
-platform-api -> platform-web: Stream log events
+platform-api -> platform-web: Stream named run events with sequence IDs
+platform-api -> platform-web: Stream run.log events with sequence IDs
 
 frontend-agent-worker -> workspace-service: Provision FE workspace
 backend-agent-worker -> workspace-service: Provision BE workspace
